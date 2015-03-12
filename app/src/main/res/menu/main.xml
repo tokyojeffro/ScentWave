@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:weightSum="1">
+    <LinearLayout android:layout_height="wrap_content" android:layout_width="224dp" android:id="@+id/linearLayout1">
+        <TextView android:text="Status: " android:layout_width="wrap_content" android:id="@+id/textView1" android:layout_height="wrap_content" android:textAppearance="?android:attr/textAppearanceMedium"></TextView>
+        <TextView android:text="Detached" android:layout_width="wrap_content" android:id="@+id/attachedTxt" android:layout_height="wrap_content" android:textAppearance="?android:attr/textAppearanceMedium"></TextView>
+    </LinearLayout>
+    <LinearLayout android:layout_height="wrap_content" android:id="@+id/linearLayout4" android:weightSum="1" android:layout_width="691dp">
+        <TextView android:layout_width="wrap_content" android:id="@+id/textView3" android:layout_height="wrap_content" android:textAppearance="?android:attr/textAppearanceMedium" android:text="Name: "></TextView>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:textAppearance="?android:attr/textAppearanceMedium" android:text="Unk." android:id="@+id/nameTxt" android:layout_weight="0.43"></TextView>
+    </LinearLayout>
+    <LinearLayout android:layout_height="wrap_content" android:id="@+id/linearLayout6" android:layout_width="fill_parent">
+        <TextView android:layout_height="wrap_content" android:id="@+id/textView2" android:text="Serial Number: " android:textAppearance="?android:attr/textAppearanceMedium" android:layout_width="wrap_content"></TextView>
+        <TextView android:layout_height="wrap_content" android:layout_weight="0.06" android:id="@+id/serialTxt" android:text="Unk." android:textAppearance="?android:attr/textAppearanceMedium" android:layout_width="wrap_content"></TextView>
+        <TextView android:layout_height="wrap_content" android:id="@+id/textView4" android:text="Version:" android:textAppearance="?android:attr/textAppearanceMedium" android:layout_width="wrap_content"></TextView>
+        <TextView android:layout_height="wrap_content" android:layout_weight="0.04" android:id="@+id/versionTxt" android:text="Unk." android:textAppearance="?android:attr/textAppearanceMedium" android:layout_width="wrap_content"></TextView>
+    </LinearLayout>
+    <LinearLayout android:weightSum="1" android:id="@+id/linearLayout2" android:layout_width="597dp" android:layout_height="50dp">
+        <TextView android:layout_width="wrap_content" android:id="@+id/textView5" android:textAppearance="?android:attr/textAppearanceMedium" android:text="Label: " android:layout_height="fill_parent"></TextView>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:textAppearance="?android:attr/textAppearanceMedium" android:text="Unk." android:id="@+id/labelTxt" android:layout_weight="0.08"></TextView>
+    </LinearLayout>
+    <LinearLayout android:layout_height="wrap_content" android:id="@+id/linearLayout5" android:layout_width="fill_parent">
+        <LinearLayout android:orientation="vertical" android:layout_height="wrap_content" android:id="@+id/linearLayout3" android:layout_width="90dp">
+            <TextView android:text=" Inputs:" android:layout_width="132dp" android:id="@+id/textView6" android:layout_height="wrap_content" android:textAppearance="?android:attr/textAppearanceMedium"></TextView>
+            <CheckBox android:text="0" android:layout_width="wrap_content" android:id="@+id/inputCheck0" android:layout_height="40dp"></CheckBox>
+            <CheckBox android:text="1" android:layout_width="wrap_content" android:id="@+id/inputCheck1" android:layout_height="40dp"></CheckBox>
+            <CheckBox android:text="2" android:layout_width="wrap_content" android:id="@+id/inputCheck2" android:layout_height="40dp"></CheckBox>
+            <CheckBox android:text="3" android:layout_width="wrap_content" android:id="@+id/inputCheck3" android:layout_height="40dp"></CheckBox>
+            <CheckBox android:text="4" android:layout_width="wrap_content" android:id="@+id/inputCheck4" android:layout_height="40dp"></CheckBox>
+            <CheckBox android:text="5" android:layout_width="wrap_content" android:id="@+id/inputCheck5" android:layout_height="40dp"></CheckBox>
+            <CheckBox android:text="6" android:layout_width="wrap_content" android:id="@+id/inputCheck6" android:layout_height="40dp"></CheckBox>
+            <CheckBox android:text="7" android:layout_width="wrap_content" android:id="@+id/inputCheck7" android:layout_height="40dp"></CheckBox>
+        </LinearLayout>
+        <LinearLayout android:orientation="vertical" android:layout_height="wrap_content" android:id="@+id/linearLayout3" android:layout_width="96dp">
+            <TextView android:text=" Outputs:" android:layout_width="132dp" android:id="@+id/textView7" android:layout_height="wrap_content" android:textAppearance="?android:attr/textAppearanceMedium"></TextView>
+            <CheckBox android:text="0" android:layout_width="wrap_content" android:id="@+id/outputCheck0" android:layout_height="40dp"></CheckBox>
+            <CheckBox android:text="1" android:layout_width="wrap_content" android:id="@+id/outputCheck1" android:layout_height="40dp"></CheckBox>
+            <CheckBox android:text="2" android:layout_width="wrap_content" android:id="@+id/outputCheck2" android:layout_height="40dp"></CheckBox>
+            <CheckBox android:text="3" android:layout_width="wrap_content" android:id="@+id/outputCheck3" android:layout_height="40dp"></CheckBox>
+            <CheckBox android:text="4" android:layout_width="wrap_content" android:id="@+id/outputCheck4" android:layout_height="40dp"></CheckBox>
+            <CheckBox android:text="5" android:layout_width="wrap_content" android:id="@+id/outputCheck5" android:layout_height="40dp"></CheckBox>
+            <CheckBox android:text="6" android:layout_width="wrap_content" android:id="@+id/outputCheck6" android:layout_height="40dp"></CheckBox>
+            <CheckBox android:text="7" android:layout_width="wrap_content" android:id="@+id/outputCheck7" android:layout_height="40dp"></CheckBox>
+        </LinearLayout>
+        <LinearLayout android:orientation="vertical" android:layout_height="wrap_content" android:id="@+id/linearLayout3" android:layout_width="114dp">
+            <TextView android:text="Sensors:" android:layout_width="132dp" android:id="@+id/textView8" android:textAppearance="?android:attr/textAppearanceMedium" android:layout_height="30dp"></TextView>
+            <TextView android:text="Unk." android:layout_width="132dp" android:id="@+id/sensor0" android:textAppearance="?android:attr/textAppearanceMedium" android:layout_height="40dp"></TextView>
+            <TextView android:text="Unk." android:layout_width="132dp" android:id="@+id/sensor1" android:layout_height="40dp" android:textAppearance="?android:attr/textAppearanceMedium"></TextView>
+            <TextView android:text="Unk." android:layout_width="132dp" android:id="@+id/sensor2" android:layout_height="40dp" android:textAppearance="?android:attr/textAppearanceMedium"></TextView>
+            <TextView android:text="Unk." android:layout_width="132dp" android:id="@+id/sensor3" android:layout_height="40dp" android:textAppearance="?android:attr/textAppearanceMedium"></TextView>
+            <TextView android:text="Unk." android:layout_width="132dp" android:id="@+id/sensor4" android:layout_height="40dp" android:textAppearance="?android:attr/textAppearanceMedium"></TextView>
+            <TextView android:text="Unk." android:layout_width="132dp" android:id="@+id/sensor5" android:layout_height="40dp" android:textAppearance="?android:attr/textAppearanceMedium"></TextView>
+            <TextView android:text="Unk." android:layout_width="132dp" android:id="@+id/sensor6" android:layout_height="40dp" android:textAppearance="?android:attr/textAppearanceMedium"></TextView>
+            <TextView android:text="Unk." android:id="@+id/sensor7" android:layout_height="40dp" android:textAppearance="?android:attr/textAppearanceMedium" android:layout_width="110dp"></TextView>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>
