@@ -15,6 +15,7 @@ import com.scentair.scentwave.R;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.TextView;
@@ -181,6 +182,7 @@ public class MainActivity extends Activity {
             SampleNumber++;
             this.sensorIndex = index;
             this.sensorVal = val;
+            Log.i("SensorReadouts", String.valueOf(sensorIndex) + " " + String.valueOf(sensorVal) );
         }
         public void run() {
             if(sensorsTextViews[sensorIndex]!=null)
