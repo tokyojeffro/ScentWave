@@ -14,7 +14,6 @@
             android:background="@android:color/darker_gray" >
             <TextView
                 android:id="@+id/teststepnumber"
-                android:text="Step 1 of 8"
                 android:layout_width="144dp"
                 android:layout_height="144dp"
                 android:gravity="center"
@@ -108,7 +107,6 @@
             android:background="@android:color/darker_gray" >
             <TextView
                 android:id="@+id/test_step_progess"
-                android:text="Progress 12/24"
                 android:layout_width="144dp"
                 android:layout_height="144dp"
                 android:layout_centerHorizontal="true"

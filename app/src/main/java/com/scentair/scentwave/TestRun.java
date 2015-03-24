@@ -4,22 +4,32 @@ import java.security.Timestamp;
 import java.util.*;
 
 public class TestRun{
-    public Integer rackNumber;
+    //TODO tie in the correct racknumber through calibration
+    public Integer rackNumber=1;
     public Timestamp timeRun;
 
-    public Integer unitsTested;
-    public Integer unitsPassed;
-    public Integer unitsFailed;
+
+    public Integer overallUnitsTested=0;
+    public Integer overallUnitsPassed=0;
+    public Integer overallUnitsFailed=0;
+
+    public Integer currentStepUnitsTested=0;
+    public Integer currentStepUnitsPassed=0;
+    public Integer currentStepUnitsFailed=0;
 
     public UnitTest[] testResults;
 
+    public Integer currentTestStep=1;
+    public Integer maxTestSteps=8;
+    public Integer numberOfBays=24;
+
     public TestRun(Integer rackNum){
         this.rackNumber = rackNum;
-        unitsTested = 24;
-        unitsPassed = 0;
-        unitsFailed = 0;
+        overallUnitsTested = 0;
+        overallUnitsPassed = 0;
+        overallUnitsFailed = 0;
 
-        testResults = new UnitTest[24];
+        testResults = new UnitTest[numberOfBays];
     }
 
 }

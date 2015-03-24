@@ -7,7 +7,7 @@ public class BayItem{
     public String scentairBarcode;
     public String unitState;
     public Integer currentValue;
-
+    public String stepStatus;
 
     public BayItem(Integer bayNumber,
                    String mitecBarcode,
@@ -19,6 +19,7 @@ public class BayItem{
         this.scentairBarcode = scentairBarcode;
         this.unitState = unitState;
         this.currentValue = currentValue;
+        this.stepStatus = "Not Tested";
     }
 
 }
