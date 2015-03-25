@@ -38,16 +38,17 @@
             android:background="@android:color/white"
             android:textSize="25dp"
             />
-        <TextView
+        <EditText
             android:id="@+id/mitecbarcode"
-            android:text="xxx123xxx"
             android:layout_width="fill_parent"
             android:layout_height="35dp"
             android:layout_marginBottom="5dp"
             android:background="@android:color/white"
             android:textSize="25dp"
             android:layout_below="@id/mitecbarcodelabel"
-            android:gravity="center_vertical|center_horizontal" />
+            android:gravity="center_vertical|center_horizontal"
+            android:inputType="textNoSuggestions|text"
+            android:autoText="false" />
         <TextView
             android:id="@+id/scentairbarcodelabel"
             android:text="Scentair Barcode:"
@@ -57,16 +58,35 @@
             android:textSize="25dp"
             android:layout_below="@id/mitecbarcode"
             />
-        <TextView
+        <EditText
             android:id="@+id/scentairbarcode"
-            android:text="xxx123xxx"
             android:layout_width="fill_parent"
             android:layout_height="35dp"
             android:layout_marginBottom="5dp"
             android:background="@android:color/white"
             android:textSize="25dp"
             android:layout_below="@+id/scentairbarcodelabel"
-            android:gravity="center_vertical|center_horizontal" />
+            android:gravity="center_vertical|center_horizontal"
+            android:inputType="text|textNoSuggestions"/>
+        <TextView
+            android:id="@+id/software_version_label"
+            android:text="SW Version"
+            android:layout_width="fill_parent"
+            android:layout_height="35dp"
+            android:background="@android:color/white"
+            android:textSize="25dp"
+            android:layout_below="@id/scentairbarcode"
+            />
+        <EditText
+            android:id="@+id/software_version"
+            android:layout_width="fill_parent"
+            android:layout_height="35dp"
+            android:layout_marginBottom="5dp"
+            android:background="@android:color/white"
+            android:textSize="25dp"
+            android:layout_below="@+id/software_version_label"
+            android:gravity="center_vertical|center_horizontal"
+            android:inputType="text|textNoSuggestions"/>
         <TextView
             android:id="@+id/unitstatelabel"
             android:text="Unit State:"
@@ -74,37 +94,30 @@
             android:layout_height="35dp"
             android:background="@android:color/white"
             android:textSize="25dp"
-            android:layout_below="@+id/scentairbarcode"
+            android:layout_below="@+id/software_version"
             />
         <TextView
             android:id="@+id/unitstate"
             android:text="FAN LOW"
-            android:layout_width="fill_parent"
-            android:layout_height="35dp"
+            android:layout_width="150dp"
+            android:layout_height="40dp"
             android:background="@android:color/white"
             android:textSize="25dp"
             android:layout_marginBottom="5dp"
             android:layout_below="@+id/unitstatelabel"
-            android:gravity="center_vertical|center_horizontal" />
-        <TextView
-            android:id="@+id/sensorreadinglabel"
-            android:text="Sensor Reading:"
-            android:layout_width="fill_parent"
-            android:layout_height="35dp"
-            android:background="@android:color/white"
-            android:textSize="25dp"
-            android:layout_below="@+id/unitstate"
-            />
+            android:gravity="center_vertical" />
         <TextView
             android:id="@+id/sensorreading"
             android:text="150"
-            android:layout_width="fill_parent"
+            android:layout_width="50dp"
             android:layout_height="40dp"
             android:background="@android:color/white"
             android:textSize="30dp"
+            android:gravity="right|center_vertical"
             android:layout_marginBottom="5dp"
-            android:layout_below="@+id/sensorreadinglabel"
-            android:gravity="center_vertical|center_horizontal" />
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true"
+            android:numeric="integer" />
     </RelativeLayout>
     <RelativeLayout
         android:layout_width="180dp"

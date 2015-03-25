@@ -1,32 +1,14 @@
 package com.scentair.scentwave;
 
-import android.app.ActionBar;
-import android.app.FragmentManager;
-import android.app.ListActivity;
-import android.content.Context;
-import android.graphics.Color;
-import android.graphics.Typeface;
+
 import android.os.Bundle;
 import android.app.Activity;
-import android.support.v4.widget.SlidingPaneLayout;
-import android.transition.Explode;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.ViewParent;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.LinearLayout;
+import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.RelativeLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import com.scentair.scentwave.BayItemArrayAdapter.customButtonListener;
-import java.lang.Object;
 
-import org.w3c.dom.Text;
-
-import java.lang.reflect.Array;
-import java.util.ArrayList;
 
 public class TestRunActivity extends Activity implements customButtonListener {
 
@@ -49,11 +31,12 @@ public class TestRunActivity extends Activity implements customButtonListener {
         //Need to build out the bay list here.
         //The bay list is a set of fragments attached to a special adapter
         listView = (ListView) findViewById(R.id.list_view);
+        listView.setItemsCanFocus(true);
 
         bayItems= new BayItem[testRun.numberOfBays];
 
         for(int i=0;i<testRun.numberOfBays;i++){
-            bayItems[i]=new BayItem(i+1,"<empty>","<empty>","Unplugged",0);
+            bayItems[i]=new BayItem(i+1,"","","Unplugged","",0);
         }
 
         aa= new BayItemArrayAdapter(this, bayItems);
@@ -103,7 +86,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
             listView.smoothScrollToPosition(position+2);
             }
         updateView();
-        aa.notifyDataSetChanged();
     }
 
     @Override
@@ -111,6 +93,36 @@ public class TestRunActivity extends Activity implements customButtonListener {
 
         int thisPosition = position;
 
+    }
+
+    @Override
+    public void onTextFieldClickListener(int position, int listViewPosition) {
+
+        int thisPosition = position;
+        EditText mitecBarcodeText;
+        EditText scentairBarcodeText;
+        EditText softwareVersionText;
+        String scentairBarcodeTemp;
+        String mitecBarcodeTemp;
+        String softwareVersionTemp;
+
+        View rowView = (View) listView.getChildAt(listViewPosition);
+        mitecBarcodeText = (EditText) rowView.findViewById(R.id.mitecbarcode);
+        scentairBarcodeText = (EditText) rowView.findViewById(R.id.scentairbarcode);
+        softwareVersionText = (EditText) rowView.findViewById(R.id.software_version);
+        scentairBarcodeTemp = scentairBarcodeText.getText().toString();
+        mitecBarcodeTemp = mitecBarcodeText.getText().toString();
+        softwareVersionTemp = softwareVersionText.getText().toString();
+
+        bayItems[position].mitecBarcode = mitecBarcodeTemp;
+        bayItems[position].scentairBarcode = scentairBarcodeTemp;
+        bayItems[position].softwareVersion = softwareVersionTemp;
+
+        //need to make sure the text stays in the field and the field is redisplayed
+        //need to validate the code entered here
+        //once validated, need to auto move to the next field
+
+        updateView();
     }
 
     @Override

@@ -22,6 +22,7 @@ public class TestRun{
     public Integer currentTestStep=1;
     public Integer maxTestSteps=8;
     public Integer numberOfBays=24;
+    public Integer currentEditPosition;
 
     public TestRun(Integer rackNum){
         this.rackNumber = rackNum;
