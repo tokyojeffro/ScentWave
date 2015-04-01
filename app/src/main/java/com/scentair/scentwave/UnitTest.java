@@ -7,14 +7,15 @@ public class UnitTest {
     public Integer bayNumber;
     public String mitecSerial;
     public String scentairSerial;
-    public Map<String, Integer> currentReadings;
-    public Map<String, String> testResults;
+    public HashMap<String, Integer> currentReadings;
+    public HashMap<String, String> testResults;
+
 
     public UnitTest(Integer rackNum, Integer bayNum){
         this.rackNumber = rackNum;
         this.bayNumber = bayNum;
-        this.mitecSerial = "00000";
-        this.scentairSerial = "00000";
+        this.mitecSerial = "";
+        this.scentairSerial = "";
 
         this.currentReadings.put("Unplugged",0);
         this.currentReadings.put("OffPlugged",0);
@@ -35,5 +36,8 @@ public class UnitTest {
         this.testResults.put("Step5", "Not tested");
         this.testResults.put("Step6", "Not tested");
         this.testResults.put("Step7", "Not tested");
+
+
+
     }
 }

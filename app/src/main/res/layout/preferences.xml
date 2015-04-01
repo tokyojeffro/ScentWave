@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_height="fill_parent"
+    android:layout_width="fill_parent">
+    <PreferenceCategory
+        android:title="First Category"
+        android:key="first_category">
+        <EditTextPreference
+            android:key="welcome_message"
+            android:title="Welcome Message"
+            android:summary="Define the Welcome message to be shown"
+            android:dialogTitle="Welcome Message"
+            android:dialogMessage="Provide a message"
+            android:defaultValue="Default welcome message" />
+    </PreferenceCategory>
+</PreferenceScreen>

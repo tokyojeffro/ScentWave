@@ -5,6 +5,23 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:weightSum="1">
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="50dp"
+        android:orientation="horizontal">
+    <TextView
+        android:id="@+id/current_operator_label"
+        android:layout_width="300dp"
+        android:layout_height="fill_parent"
+        android:textSize="25dp"
+        android:text="Current Operator:"/>
+    <TextView
+        android:id="@+id/current_operator"
+        android:layout_width="300dp"
+        android:layout_height="fill_parent"
+        android:textSize="25dp"
+        />
+    </LinearLayout>
     <LinearLayout android:layout_height="fill_parent" android:layout_width="match_parent" android:orientation="vertical"
         android:gravity="center_vertical">
         <Button

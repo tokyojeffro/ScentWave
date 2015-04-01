@@ -1,37 +1,63 @@
 package com.scentair.scentwave;
 
 
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.app.Activity;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import com.scentair.scentwave.BayItemArrayAdapter.customButtonListener;
 
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+
 
 public class TestRunActivity extends Activity implements customButtonListener {
 
     TestRun testRun;
-    TestSteps testSteps = new TestSteps();
+    ArrayList<TestStep> testSteps = MainActivity.testSteps.getTestSteps();
     BayItem[] bayItems;
     ListView listView;
     BayItemArrayAdapter aa;
+    Context context;
+
 
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.testrun);
+        context = this.getApplicationContext();
 
         //Initialize this test run
         //TODO Make sure this input is the rack number from the calibration results
         testRun = new TestRun(1);
+        // Make sure we read the test steps from the proper data structure
+        testRun.maxTestSteps = testSteps.size();
+        TestStep firstStep = testSteps.get(0);
+        firstStep.setStartTime();
 
         //Need to build out the bay list here.
         //The bay list is a set of fragments attached to a special adapter
         listView = (ListView) findViewById(R.id.list_view);
         listView.setItemsCanFocus(true);
+
+        View footerView =  ((LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.baylistfooter, null, false);
+        listView.addFooterView(footerView);
+
+        Button passAllButton = (Button) findViewById(R.id.pass_all_button);
+        passAllButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                passAll();
+            }
+        });
 
         bayItems= new BayItem[testRun.numberOfBays];
 
@@ -56,73 +82,115 @@ public class TestRunActivity extends Activity implements customButtonListener {
         //   change the row in some visual way (maybe change to light green background color?
         //   scroll down to the next entry
 
+
+        bayItems[position].stepStatus = "Passed";
+        listView.smoothScrollToPosition(position+2);
+
         // update results totals
         testRun.currentStepUnitsPassed++;
         testRun.currentStepUnitsTested++;
 
-        View rowView = (View) listView.getChildAt(listViewPosition);
-
         if ( testRun.currentStepUnitsTested >= testRun.numberOfBays ) {
-            // Here we need to reset the background colors
-            // move the text to the next step
-            // reset the various counters
-            // go back to the top of the list
-            for (int i=0;i<testRun.numberOfBays;i++) {
-                //reset background colors
-                bayItems[i].stepStatus = "Not Tested";
-            }
-            //reset the counters
-            testRun.currentStepUnitsPassed = 0;
-            testRun.currentStepUnitsTested = 0;
-            testRun.currentStepUnitsFailed = 0;
+            loadNextStep();
+        }
 
-            testRun.currentTestStep++;
-
-            //scroll back to the top of the list
-            listView.smoothScrollToPosition(0);
-
-        } else {
-            bayItems[position].stepStatus = "Passed";
-            listView.smoothScrollToPosition(position+2);
-            }
         updateView();
     }
 
     @Override
     public void onFailButtonClickListener(int position, int listViewPosition) {
+        // One of the test steps has failed for one of the units in the bays
+        // Here is where we should:
+        //   Trigger a dialog to tag the failure
+        //   Check to see if all units have been tested for this step, if so, start a new step
+        //   Update the results totals
+        //   change the row in some visual way (maybe change to red background color?
+        //   scroll down to the next entry
 
-        int thisPosition = position;
 
-    }
+        // Here we need an AlertDialog that provides a list of potential failure reasons
+        TestStep testStep = testSteps.get(testRun.currentTestStep-1);
 
-    @Override
-    public void onTextFieldClickListener(int position, int listViewPosition) {
+        Integer[] failureList = testStep.possibleFailures;
+        final CharSequence[] failureStrings = new CharSequence[testStep.possibleFailures.length];
 
-        int thisPosition = position;
-        EditText mitecBarcodeText;
-        EditText scentairBarcodeText;
-        EditText softwareVersionText;
-        String scentairBarcodeTemp;
-        String mitecBarcodeTemp;
-        String softwareVersionTemp;
+        for (int i=0;i<testStep.possibleFailures.length;i++) {
+            failureStrings[i] = testRun.failTypes.get(testStep.possibleFailures[i]);
+        }
 
-        View rowView = (View) listView.getChildAt(listViewPosition);
-        mitecBarcodeText = (EditText) rowView.findViewById(R.id.mitecbarcode);
-        scentairBarcodeText = (EditText) rowView.findViewById(R.id.scentairbarcode);
-        softwareVersionText = (EditText) rowView.findViewById(R.id.software_version);
-        scentairBarcodeTemp = scentairBarcodeText.getText().toString();
-        mitecBarcodeTemp = mitecBarcodeText.getText().toString();
-        softwareVersionTemp = softwareVersionText.getText().toString();
+        bayItems[position].stepStatus = "Failed";
+        bayItems[position].failStep = testRun.currentTestStep;
+        listView.smoothScrollToPosition(position+2);
 
-        bayItems[position].mitecBarcode = mitecBarcodeTemp;
-        bayItems[position].scentairBarcode = scentairBarcodeTemp;
-        bayItems[position].softwareVersion = softwareVersionTemp;
+        final int bayPosition = position;
 
-        //need to make sure the text stays in the field and the field is redisplayed
-        //need to validate the code entered here
-        //once validated, need to auto move to the next field
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Failure Reason")
+                .setItems(failureStrings, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        //Load the proper failure reason into the failure field
+                        bayItems[bayPosition].failCause = failureStrings[which].toString();
+                        aa.notifyDataSetChanged();
+                    }
+                })
+                .show();
+
+        // update results totals
+        testRun.currentStepUnitsFailed++;
+        testRun.currentStepUnitsTested++;
+
+        if ( testRun.currentStepUnitsTested > testRun.numberOfBays )
+        {
+            loadNextStep();
+        }
 
         updateView();
+    }
+
+    private void passAll () {
+        // The operator has scrolled to the end of the bay list and pressed pass all.
+        // Update the data to be all 'pass' (do not flag any fails here)
+        for (int i=0;i<testRun.numberOfBays;i++) {
+            //reset background colors
+            bayItems[i].stepStatus = "Passed";
+        }
+
+        loadNextStep();
+
+        updateView();
+    }
+
+    private void loadNextStep() {
+        // This is the code to load the next test step and reset the variables for a new run
+        // through the bay list
+        // Here we need to reset the background colors
+        // move the text to the next step
+        // reset the various counters
+        // go back to the top of the list
+        for (int i=0;i<testRun.numberOfBays;i++) {
+            //reset background colors
+            bayItems[i].stepStatus = "Not Tested";
+        }
+
+        // Update the step complete timestamp
+        TestStep oldTestStep = testSteps.get(testRun.currentTestStep-1);
+        oldTestStep.setEndTime();
+
+
+        //reset the counters
+        testRun.currentStepUnitsPassed = 0;
+        testRun.currentStepUnitsTested = 0;
+        testRun.currentStepUnitsFailed = 0;
+
+        testRun.currentTestStep++;
+
+        //Update the step begun timestamp
+        TestStep newTestStep = testSteps.get(testRun.currentTestStep-1);
+        newTestStep.setStartTime();
+
+        //scroll back to the top of the list
+        listView.smoothScrollToPosition(0);
     }
 
     @Override
@@ -131,10 +199,18 @@ public class TestRunActivity extends Activity implements customButtonListener {
     }
 
     private void updateView(){
+        TestStep testStep = testSteps.get(testRun.currentTestStep-1);
+
         //Get the header info loaded from the data structure
         TextView currentStep = (TextView)findViewById(R.id.teststepnumber);
         String text= "Step " + testRun.currentTestStep.toString() + " of " + testRun.maxTestSteps.toString();
         currentStep.setText(text);
+
+        //Load the current step start time
+        TextView currentStepStartTime = (TextView)findViewById(R.id.start_time);
+        SimpleDateFormat format = new SimpleDateFormat("yyyy MM dd hh:mm:ss");
+        String dateToStr = format.format(testStep.getStartTime());
+        currentStepStartTime.setText(dateToStr);
 
         //Get the current progress info loaded
         TextView currentProgress = (TextView) findViewById(R.id.test_step_progess);
@@ -143,7 +219,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
 
         //Get the verify list loaded
         TextView verifyText = (TextView) findViewById(R.id.teststepverifylist);
-        TestStep testStep = testSteps.getTestStep(testRun.currentTestStep-1);
         text = testStep.expectedResults;
         verifyText.setText(text);
 

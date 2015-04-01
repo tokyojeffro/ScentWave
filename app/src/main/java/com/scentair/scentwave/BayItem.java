@@ -9,6 +9,9 @@ public class BayItem{
     public String unitState;
     public Integer currentValue;
     public String stepStatus;
+    public String failCause;
+    public Integer failCauseIndex;
+    public Integer failStep;
 
     public BayItem(Integer bayNumber,
                    String mitecBarcode,
@@ -23,6 +26,8 @@ public class BayItem{
         this.currentValue = currentValue;
         this.softwareVersion = softwareVersion;
         this.stepStatus = "Not Tested";
+        this.failCause = "";
+        this.failStep = 0;
+        this.failCauseIndex=0;
     }
-
 }

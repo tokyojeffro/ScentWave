@@ -29,7 +29,6 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
 
         void onPassButtonClickListener(int position, int listViewPosition);
         void onFailButtonClickListener(int position, int listViewPosition);
-        void onTextFieldClickListener(int position, int listViewPosition);
     }
 
     public void setCustomButtonListener(customButtonListener listener) {
@@ -92,8 +91,8 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
             holder.failButton.setBackgroundColor(Color.parseColor("#99CC00"));
         } else {
             // Step failed for that bay
-            holder.passButton.setText("");
-            holder.failButton.setText("Failed");
+            holder.passButton.setText("Failed");
+            holder.failButton.setText(bayItems[position].failCause);
             holder.passButton.setBackgroundColor(Color.parseColor("#FF4444"));
             holder.failButton.setBackgroundColor(Color.parseColor("#FF4444"));
         }
@@ -134,7 +133,9 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
             @Override
             public void onClick(View v) {
                 View parentRow = (View) v.getParent();
-                ListView listView = (ListView) parentRow.getParent();
+                View parentRow2 = (View) parentRow.getParent();
+
+                ListView listView = (ListView) parentRow2.getParent();
                 final int listViewPosition = listView.getPositionForView(parentRow);
                 if (customListener != null) {
                     customListener.onFailButtonClickListener(position, listViewPosition);
@@ -194,5 +195,18 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
         imm.hideSoftInputFromWindow(holder.mitecBarcodeField.getWindowToken(),0);
 
         return rowView;
+    }
+
+    public void passAll (View v) {
+        // The operator has scrolled to the end of the bay list and pressed pass all.
+        // Update the data to be all 'pass' (do not flag any fails here)
+        for (int i=0;i<currentEditPosition;i++) {
+            //reset background colors
+            bayItems[i].stepStatus = "Passed";
+        }
+
+//        loadNextStep();
+
+//        updateView();
     }
 }

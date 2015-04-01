@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/bay_item_footer"
+    android:orientation="horizontal"
+    android:layout_width="fill_parent"
+    android:layout_height="300dp">
+        <Button
+            android:id="@+id/pass_all_button"
+            android:text="Pass All"
+            android:layout_width="fill_parent"
+            android:layout_height="150dp"
+            android:layout_centerHorizontal="true"
+            android:layout_centerVertical="true"
+            android:gravity="center"
+            android:layout_margin="3dp"
+            android:textSize="25dp"
+            android:background="#99CC00"
+            />
+</LinearLayout>
+
