@@ -9,11 +9,14 @@ import android.view.*;
 import android.content.*;
 import android.widget.TextView;
 
+import java.util.ArrayList;
+
 public class MainActivity extends Activity {
 
     // Need some global variables to store array values
     public static Operators operators;
     public static TestSteps testSteps;
+    public static Failures failures;
 
     // These are the tags for the data stored in NVM as preferences
     public static final String MyPreferences = "ScentwavePrefs";
@@ -21,9 +24,7 @@ public class MainActivity extends Activity {
     public static final String CURRENT_TEST_STATUS = "CURRENT_TEST_STATUS";
     public static final String LAST_STEP_COMPLETE = "LAST_STEP_COMPLETE";
 
-
     SharedPreferences sharedPreferences;
-
 
     /** Called when the activity is first created. */
     @Override
@@ -66,6 +67,7 @@ public class MainActivity extends Activity {
         protected String doInBackground(String... urls) {
             operators = new Operators();
             testSteps = new TestSteps();
+            failures = new Failures();
             return urls[0];
         }
         @Override

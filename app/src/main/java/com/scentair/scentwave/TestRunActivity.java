@@ -1,6 +1,5 @@
 package com.scentair.scentwave;
 
-
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -17,7 +16,6 @@ import com.scentair.scentwave.BayItemArrayAdapter.customButtonListener;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
-
 public class TestRunActivity extends Activity implements customButtonListener {
 
     TestRun testRun;
@@ -26,7 +24,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
     ListView listView;
     BayItemArrayAdapter aa;
     Context context;
-
+    ArrayList<Failure> failureList;
 
     /** Called when the activity is first created. */
     @Override
@@ -42,6 +40,8 @@ public class TestRunActivity extends Activity implements customButtonListener {
         testRun.maxTestSteps = testSteps.size();
         TestStep firstStep = testSteps.get(0);
         firstStep.setStartTime();
+
+        failureList = MainActivity.failures.getFailures();
 
         //Need to build out the bay list here.
         //The bay list is a set of fragments attached to a special adapter
@@ -64,7 +64,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
         for(int i=0;i<testRun.numberOfBays;i++){
             bayItems[i]=new BayItem(i+1,"","","Unplugged","",0);
         }
-
         aa= new BayItemArrayAdapter(this, bayItems);
         aa.setCustomButtonListener(TestRunActivity.this);
 
@@ -82,7 +81,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
         //   change the row in some visual way (maybe change to light green background color?
         //   scroll down to the next entry
 
-
         bayItems[position].stepStatus = "Passed";
         listView.smoothScrollToPosition(position+2);
 
@@ -93,7 +91,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
         if ( testRun.currentStepUnitsTested >= testRun.numberOfBays ) {
             loadNextStep();
         }
-
         updateView();
     }
 
@@ -107,15 +104,14 @@ public class TestRunActivity extends Activity implements customButtonListener {
         //   change the row in some visual way (maybe change to red background color?
         //   scroll down to the next entry
 
-
         // Here we need an AlertDialog that provides a list of potential failure reasons
         TestStep testStep = testSteps.get(testRun.currentTestStep-1);
 
-        Integer[] failureList = testStep.possibleFailures;
-        final CharSequence[] failureStrings = new CharSequence[testStep.possibleFailures.length];
+        final CharSequence[] failureStrings = new CharSequence[testStep.possibleFailures.size()];
 
-        for (int i=0;i<testStep.possibleFailures.length;i++) {
-            failureStrings[i] = testRun.failTypes.get(testStep.possibleFailures[i]);
+        for (int i=0;i<testStep.possibleFailures.size();i++) {
+            Failure failure = failureList.get(testStep.possibleFailures.get(i));
+            failureStrings[i] = failure.failureText;
         }
 
         bayItems[position].stepStatus = "Failed";
@@ -155,7 +151,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
             //reset background colors
             bayItems[i].stepStatus = "Passed";
         }
-
         loadNextStep();
 
         updateView();
@@ -176,7 +171,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
         // Update the step complete timestamp
         TestStep oldTestStep = testSteps.get(testRun.currentTestStep-1);
         oldTestStep.setEndTime();
-
 
         //reset the counters
         testRun.currentStepUnitsPassed = 0;

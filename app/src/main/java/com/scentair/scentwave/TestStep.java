@@ -1,6 +1,7 @@
 package com.scentair.scentwave;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 public class TestStep {
@@ -8,7 +9,7 @@ public class TestStep {
     public String testStep1;
     public String testStep2;
     public String expectedResults;
-    public Integer[] possibleFailures;
+    public ArrayList<Integer> possibleFailures;
     public Date stepStartTime;
     public Date stepEndTime;
 
@@ -16,7 +17,7 @@ public class TestStep {
                      String testStep1,
                      String testStep2,
                      String expectedResults,
-                     Integer[] possibleFailures){
+                     ArrayList<Integer> possibleFailures){
         this.numberOfActions=numberOfActions;
         this.testStep1=testStep1;
         this.testStep2=testStep2;
@@ -25,7 +26,9 @@ public class TestStep {
     }
 
     // Empty constructor so I can load values later
-    public TestStep (){};
+    public TestStep (){
+        possibleFailures = new ArrayList<Integer>();
+    };
 
     public void setStartTime() {
         this.stepStartTime = new Date();
