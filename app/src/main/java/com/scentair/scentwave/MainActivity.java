@@ -18,6 +18,7 @@ public class MainActivity extends Activity {
     public static Operators operators;
     public static TestSteps testSteps;
     public static Failures failures;
+    public static Rack rack;
 
     // These are the tags for the data stored in NVM as preferences
     public static final String TAG_MYPREFS = "ScentwavePrefs";
@@ -83,6 +84,9 @@ public class MainActivity extends Activity {
             operators = new Operators();
             testSteps = new TestSteps();
             failures = new Failures();
+            Integer currentRack=sharedPreferences.getInt(TAG_RACK_NUMBER,0);
+            rack = new Rack(currentRack);
+
             return urls[0];
         }
         @Override

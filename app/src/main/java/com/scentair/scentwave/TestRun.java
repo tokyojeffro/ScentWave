@@ -26,8 +26,8 @@ public class TestRun{
     public Integer numberOfBays=24;
     public Integer currentEditPosition;
 
-    public TestRun(Integer rackNum, Integer[] phidgets){
-        this.rack = new Rack(rackNum,phidgets);
+    public TestRun(Integer rackNum){
+        this.rack = new Rack(rackNum);
         overallUnitsTested = 0;
         overallUnitsPassed = 0;
         overallUnitsFailed = 0;

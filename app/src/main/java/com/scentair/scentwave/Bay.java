@@ -11,6 +11,12 @@ public class Bay {
         calibrationOffset = 0;
     }
 
+    public Bay (Integer bayNumber,Boolean status,Integer offset) {
+        active = status;
+        this.bayNumber = bayNumber;
+        calibrationOffset = offset;
+    }
+
     public Integer getCalibrationOffset(){
         return calibrationOffset;
     }

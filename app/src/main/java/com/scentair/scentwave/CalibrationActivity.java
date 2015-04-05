@@ -39,15 +39,8 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
         // Pull the associated rack number from NVM
         currentRack = sharedPreferences.getInt(MainActivity.TAG_RACK_NUMBER,0);
 
-        // Pull the three associated phidget serial numbers from NVM
-        // These (as well as the calibration data) will be saved to the server
-
-        phidgets[0] = sharedPreferences.getInt(MainActivity.TAG_PHIDGET_1,0);
-        phidgets[1] = sharedPreferences.getInt(MainActivity.TAG_PHIDGET_2,0);
-        phidgets[2] = sharedPreferences.getInt(MainActivity.TAG_PHIDGET_3,0);
-
-        //Initialize the rack
-        rack = new Rack(currentRack,phidgets);
+        //Initialize the rack and assign it to the instance in Main
+        rack = MainActivity.rack;
 
         // Used in case we change the rack or the serial numbers here in calibration
         editor = getSharedPreferences(MainActivity.TAG_MYPREFS,Context.MODE_PRIVATE).edit();
@@ -125,18 +118,18 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
 
         // Set up phidget serial number 1
         TextView phidgetSerialView = (TextView) findViewById(R.id.phidget_1);
-        text="unset1";
+        text=rack.phidgetSerialNumbers[0].toString();
         phidgetSerialView.setText(text);
 
 
         // Set up phidget serial number 2
         phidgetSerialView = (TextView) findViewById(R.id.phidget_2);
-        text="unset2";
+        text=rack.phidgetSerialNumbers[1].toString();
         phidgetSerialView.setText(text);
 
         // Set up phidget serial number 3
         phidgetSerialView = (TextView) findViewById(R.id.phidget_3);
-        text="unset3";
+        text=rack.phidgetSerialNumbers[2].toString();
         phidgetSerialView.setText(text);
 
         aa.notifyDataSetChanged();

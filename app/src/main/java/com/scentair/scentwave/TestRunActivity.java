@@ -28,7 +28,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
     SharedPreferences sharedPreferences;
     SharedPreferences.Editor editor;
     public Integer currentRack;
-    static Integer[] phidgets = new Integer[3];
 
     /** Called when the activity is first created. */
     @Override
@@ -52,15 +51,8 @@ public class TestRunActivity extends Activity implements customButtonListener {
         // Pull the associated rack number from NVM
         currentRack = sharedPreferences.getInt(MainActivity.TAG_RACK_NUMBER,0);
 
-        // Pull the three associated phidget serial numbers from NVM
-        // These (as well as the calibration data) will be saved to the server
-
-        phidgets[0] = sharedPreferences.getInt(MainActivity.TAG_PHIDGET_1,0);
-        phidgets[1] = sharedPreferences.getInt(MainActivity.TAG_PHIDGET_2,0);
-        phidgets[2] = sharedPreferences.getInt(MainActivity.TAG_PHIDGET_3,0);
-
-
-        testRun = new TestRun(currentRack,phidgets);
+        //Initialize this test run
+        testRun = new TestRun(currentRack);
         // Make sure we read the test steps from the proper data structure
         testRun.maxTestSteps = testSteps.size();
         Integer savedTestStep = sharedPreferences.getInt(MainActivity.TAG_LAST_STEP_COMPLETE,0);
@@ -75,9 +67,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
         }
         TestStep firstStep = testSteps.get(savedTestStep-1);
         firstStep.setStartTime();
-
-        //Initialize this test run
-        //TODO Make sure this input is the rack number from the calibration results
 
         failureList = MainActivity.failures.getFailures();
 
