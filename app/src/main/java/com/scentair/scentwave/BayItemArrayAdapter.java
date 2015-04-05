@@ -46,8 +46,8 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
         Button failButton;
     }
 
-    public BayItemArrayAdapter (Context context, BayItem[] bayItems){
-        super(context,R.layout.bayitem,bayItems);
+    public BayItemArrayAdapter(Context context, BayItem[] bayItems) {
+        super(context, R.layout.bayitem, bayItems);
         this.context = context;
         this.bayItems = bayItems;
     }
@@ -56,7 +56,7 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
     public View getView(final int position, View convertView, ViewGroup parent) {
         View rowView = convertView;
 
-        if (rowView==null) {
+        if (rowView == null) {
             ViewHolder viewHolder = new ViewHolder();
 
             LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -99,13 +99,12 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
 
         // Load the data from the array into the view
         holder.mitecBarcodeField.setText(bayItems[position].mitecBarcode);
-        holder.bayNumberField.setText(String.valueOf(bayItems[position].bayNumber));
+        holder.bayNumberField.setText(String.valueOf(bayItems[position].bay.bayNumber));
         holder.scentairBarcodeField.setText(bayItems[position].scentairBarcode);
-        holder.softwareVersionField.setText(bayItems[position].softwareVersion);
         holder.unitStateField.setText(bayItems[position].unitState);
         holder.sensorReadingField.setText(String.valueOf(bayItems[position].currentValue));
 
-        if (position!=currentEditPosition) {
+        if (position != currentEditPosition) {
             //Make sure the text entry fields don't have cursors or highlights
             holder.mitecBarcodeField.setBackgroundColor(Color.WHITE);
             holder.mitecBarcodeField.setCursorVisible(false);
@@ -151,11 +150,11 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
                 if (!hasFocus) {
                     bayItems[position].scentairBarcode = editText.getText().toString();
                     editText.setBackgroundColor(Color.WHITE);
-                    currentEditPosition=position;
+                    currentEditPosition = position;
                 } else {
                     // Does have focus, lets highlight the field by changing background color
                     editText.setBackgroundColor(Color.GRAY);
-                    currentEditPosition=-1;
+                    currentEditPosition = -1;
                 }
             }
         });
@@ -167,46 +166,26 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
                     final EditText editText = (EditText) v;
                     bayItems[position].mitecBarcode = editText.getText().toString();
                     v.setBackgroundColor(Color.WHITE);
-                    currentEditPosition=position;
+                    currentEditPosition = position;
                 } else {
                     v.setBackgroundColor(Color.LTGRAY);
-                    currentEditPosition=-1;
-                }
-            }
-        });
-
-        holder.softwareVersionField.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View v, boolean hasFocus) {
-                if (!hasFocus) {
-                    final EditText text = (EditText) v;
-                    bayItems[position].softwareVersion = text.getText().toString();
-                    v.setBackgroundColor(Color.WHITE);
-                    currentEditPosition=position;
-                } else {
-                    // Does have focus, lets highlight the field by changing background color
-                    v.setBackgroundColor(Color.GRAY);
-                    currentEditPosition=-1;
+                    currentEditPosition = -1;
                 }
             }
         });
 
         InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
-        imm.hideSoftInputFromWindow(holder.mitecBarcodeField.getWindowToken(),0);
+        imm.hideSoftInputFromWindow(holder.mitecBarcodeField.getWindowToken(), 0);
 
         return rowView;
     }
 
-    public void passAll (View v) {
+    public void passAll(View v) {
         // The operator has scrolled to the end of the bay list and pressed pass all.
         // Update the data to be all 'pass' (do not flag any fails here)
-        for (int i=0;i<currentEditPosition;i++) {
+        for (int i = 0; i < currentEditPosition; i++) {
             //reset background colors
             bayItems[i].stepStatus = "Passed";
         }
-
-//        loadNextStep();
-
-//        updateView();
     }
 }

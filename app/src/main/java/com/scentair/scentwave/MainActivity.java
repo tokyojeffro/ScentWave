@@ -7,6 +7,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.*;
 import android.content.*;
+import android.widget.Button;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -19,10 +20,15 @@ public class MainActivity extends Activity {
     public static Failures failures;
 
     // These are the tags for the data stored in NVM as preferences
-    public static final String MyPreferences = "ScentwavePrefs";
-    public static final String OPERATOR_NAME = "OPERATOR_NAME";
-    public static final String CURRENT_TEST_STATUS = "CURRENT_TEST_STATUS";
-    public static final String LAST_STEP_COMPLETE = "LAST_STEP_COMPLETE";
+    public static final String TAG_MYPREFS = "ScentwavePrefs";
+    public static final String TAG_OPERATOR_NAME = "OPERATOR_NAME";
+    public static final String TAG_RESUME_RUN = "RESUME_RUN";
+    public static final String TAG_LAST_STEP_COMPLETE = "LAST_STEP_COMPLETE";
+    public static final String TAG_PHIDGET_1 = "PHIDGET_1";
+    public static final String TAG_PHIDGET_2 = "PHIDGET_2";
+    public static final String TAG_PHIDGET_3 = "PHIDGET_3";
+    public static final String TAG_RACK_NUMBER = "RACK_NUMBER";
+
 
     SharedPreferences sharedPreferences;
 
@@ -41,12 +47,21 @@ public class MainActivity extends Activity {
 
     // layout button triggers this method to start new activity
     public void startCalibrate (View view) {
-        //TODO add method when activity is ready
+        Intent intent = new Intent(this,CalibrationActivity.class);
+        startActivity(intent);
     }
 
     // layout button triggers this method to start new activity
     public void startTestRun (View view) {
         Intent intent = new Intent(this,TestRunActivity.class);
+        startActivity(intent);
+    }
+
+    // layout button triggers this method to start new activity
+    // This button is hidden unless a resume is possible
+    public void resumeTestRun (View view) {
+        Intent intent = new Intent(this,TestRunActivity.class);
+        intent.putExtra(TAG_RESUME_RUN, true);
         startActivity(intent);
     }
 
@@ -85,13 +100,24 @@ public class MainActivity extends Activity {
 
     private void updateView(){
         //Load up the shared preferences
-        sharedPreferences = getSharedPreferences(MyPreferences, Context.MODE_PRIVATE);
-        String currentOperator = sharedPreferences.getString(OPERATOR_NAME,null);
+        sharedPreferences = getSharedPreferences(TAG_MYPREFS, Context.MODE_PRIVATE);
+        String currentOperator = sharedPreferences.getString(TAG_OPERATOR_NAME,null);
         if (currentOperator==null) {
             currentOperator="not set";
         }
         TextView textView = (TextView) findViewById(R.id.current_operator);
         textView.setText(currentOperator);
+
+        Integer currentTestStep = sharedPreferences.getInt(TAG_LAST_STEP_COMPLETE,0);
+        if (currentTestStep!=-1) {
+            // The tests were not completed, offer the option to start at the last step completed.
+            Button button = (Button) findViewById(R.id.ResumeTestButton);
+            button.setVisibility(Button.VISIBLE);
+        }
+        else {
+            Button button = (Button) findViewById(R.id.ResumeTestButton);
+            button.setVisibility(Button.INVISIBLE);
+        }
     }
 
     @Override

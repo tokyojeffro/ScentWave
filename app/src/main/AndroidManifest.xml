@@ -27,6 +27,7 @@
             android:screenOrientation="portrait"></activity>
         <activity android:name=".MonitorActivity"></activity>
         <activity android:name=".ChangeOperatorActivity"></activity>
+        <activity android:name=".CalibrationActivity"></activity>
     </application>
 
 </manifest>

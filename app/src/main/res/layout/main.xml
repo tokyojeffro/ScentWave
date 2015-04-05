@@ -25,6 +25,24 @@
     <LinearLayout android:layout_height="fill_parent" android:layout_width="match_parent" android:orientation="vertical"
         android:gravity="center_vertical">
         <Button
+            android:id="@+id/ChangeOperatorButton"
+            android:text="Change Operator"
+            android:layout_width="300dp"
+            android:layout_height="100dp"
+            android:layout_gravity="center"
+            android:textSize="30dp"
+            android:onClick="startChangeOperator"
+        />
+        <Button
+            android:id="@+id/CalibrateButton"
+            android:text="Calibrate Rack"
+            android:layout_width="300dp"
+            android:layout_height="100dp"
+            android:layout_gravity="center"
+            android:textSize="30dp"
+            android:onClick="startCalibrate"
+        />
+        <Button
             android:id="@+id/MonitorButton"
             android:text="Monitor"
             android:layout_width="300dp"
@@ -43,23 +61,14 @@
             android:onClick="startTestRun"
             />
         <Button
-            android:id="@+id/CalibrateButton"
-            android:text="Calibrate Rack"
+            android:id="@+id/ResumeTestButton"
+            android:text="Resume Test Run"
             android:layout_width="300dp"
             android:layout_height="100dp"
             android:layout_gravity="center"
             android:textSize="30dp"
-            android:onClick="startCalibrate"
+            android:onClick="resumeTestRun"
+            android:visibility="invisible"
             />
-        <Button
-            android:id="@+id/ChangeOperatorButton"
-            android:text="Change Operator"
-            android:layout_width="300dp"
-            android:layout_height="100dp"
-            android:layout_gravity="center"
-            android:textSize="30dp"
-            android:onClick="startChangeOperator"
-            />
-
     </LinearLayout>
 </LinearLayout>

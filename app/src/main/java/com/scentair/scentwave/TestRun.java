@@ -6,7 +6,9 @@ import java.util.*;
 
 public class TestRun{
     //TODO tie in the correct racknumber through calibration
-    public Integer rackNumber=1;
+
+    // Need to load the phidget info from here
+    public Rack rack;
     public SimpleDateFormat timeRun=new SimpleDateFormat();
 
     public Integer overallUnitsTested=0;
@@ -24,12 +26,16 @@ public class TestRun{
     public Integer numberOfBays=24;
     public Integer currentEditPosition;
 
-    public TestRun(Integer rackNum){
-        this.rackNumber = rackNum;
+    public TestRun(Integer rackNum, Integer[] phidgets){
+        this.rack = new Rack(rackNum,phidgets);
         overallUnitsTested = 0;
         overallUnitsPassed = 0;
         overallUnitsFailed = 0;
 
         testResults = new UnitTest[numberOfBays];
+    }
+
+    public void setCurrentTestStep (int currentStep) {
+        currentTestStep=currentStep;
     }
 }

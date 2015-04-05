@@ -33,8 +33,8 @@ public class ChangeOperatorActivity extends ListActivity {
                 String operator = ((TextView) view).getText().toString();
                 // Put the value back into the app preferences for the next test run start to pick up
 
-                editor = getSharedPreferences(MainActivity.MyPreferences,MODE_PRIVATE).edit();
-                editor.putString(MainActivity.OPERATOR_NAME,operator);
+                editor = getSharedPreferences(MainActivity.TAG_MYPREFS,MODE_PRIVATE).edit();
+                editor.putString(MainActivity.TAG_OPERATOR_NAME,operator);
                 editor.commit();
 
                 // Go back to the main menu
