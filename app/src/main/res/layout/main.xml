@@ -34,6 +34,15 @@
             android:onClick="startChangeOperator"
         />
         <Button
+            android:id="@+id/PreferencesButton"
+            android:text="Change Preferences"
+            android:layout_width="300dp"
+            android:layout_height="100dp"
+            android:layout_gravity="center"
+            android:textSize="30dp"
+            android:onClick="startChangePreferences"
+            />
+        <Button
             android:id="@+id/CalibrateButton"
             android:text="Calibrate Rack"
             android:layout_width="300dp"

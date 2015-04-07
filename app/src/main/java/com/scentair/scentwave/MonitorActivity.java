@@ -14,6 +14,8 @@ import com.phidgets.event.SensorChangeListener;
 import com.scentair.scentwave.R;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -28,12 +30,19 @@ public class MonitorActivity extends Activity {
     Integer SampleNumber=1;
     TextView sampleTextView;
 
+    SharedPreferences sharedPreferences;
+    String phidgetServerAddress;
+
 
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.monitor);
+
+
+        sharedPreferences=getSharedPreferences(MainActivity.TAG_MYPREFS, Context.MODE_PRIVATE);
+        phidgetServerAddress = sharedPreferences.getString(MainActivity.TAG_PHIDGET_SERVER_ADDRESS,"");
 
         sensorsTextViews = new TextView[8];
         sensorsTextViews[0] = (TextView)findViewById(R.id.sensor0);
@@ -95,7 +104,7 @@ public class MonitorActivity extends Activity {
 
 
             });
-            ik.openAny("192.168.1.22", 5001);
+            ik.openAny(phidgetServerAddress, 5001);
         }
         catch (PhidgetException pe)
         {

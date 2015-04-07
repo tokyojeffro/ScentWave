@@ -11,7 +11,6 @@ import java.util.Date;
 
 public class TestSteps {
 
-    private static final String db_url = "http://192.168.1.26/dbtest.php";
     private static final String TAG_NUMBER_OF_ACTIONS = "numberOfActions";
     private static final String TAG_TEST_STEP_1 = "testStep1";
     private static final String TAG_TEST_STEP_2 = "testStep2";
@@ -27,14 +26,14 @@ public class TestSteps {
     JSONArray json_operators = null;
 
     // Constructor
-    public TestSteps () {
+    public TestSteps (String dbAddress) {
         // Read the array of tests from the database on the network
 
         //Initialize the operator array list
         testSteps = new ArrayList<TestStep>();
 
         // Get the JSON
-        String url = db_url + "/tests";
+        String url = "http://" + dbAddress + "/dbtest.php/tests";
 
         JSONParser jParser = new JSONParser();
 
@@ -65,7 +64,7 @@ public class TestSteps {
         testStepFailures = new ArrayList<TestStepFailure>();
 
         // Get the JSON
-        url = db_url + "/teststepfailures";
+        url = "http://" + dbAddress + "/dbtest.php/teststepfailures";
 
         json_operators = jParser.getJSONFromUrl(url);
 

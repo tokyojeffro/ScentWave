@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.app.Activity;
 import android.view.LayoutInflater;
@@ -28,6 +29,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
     SharedPreferences sharedPreferences;
     SharedPreferences.Editor editor;
     public Integer currentRack;
+    private boolean highlightFailed = false;
 
     /** Called when the activity is first created. */
     @Override
@@ -50,9 +52,10 @@ public class TestRunActivity extends Activity implements customButtonListener {
         // Need to make sure we pull out the calibration info before starting the test run
         // Pull the associated rack number from NVM
         currentRack = sharedPreferences.getInt(MainActivity.TAG_RACK_NUMBER,0);
+        String dbAddress = sharedPreferences.getString(MainActivity.TAG_DATABASE_SERVER_ADDRESS,"");
 
         //Initialize this test run
-        testRun = new TestRun(currentRack);
+        testRun = new TestRun(currentRack,dbAddress);
         // Make sure we read the test steps from the proper data structure
         testRun.maxTestSteps = testSteps.size();
         Integer savedTestStep = sharedPreferences.getInt(MainActivity.TAG_LAST_STEP_COMPLETE,0);
@@ -89,7 +92,9 @@ public class TestRunActivity extends Activity implements customButtonListener {
         bayItems= new BayItem[testRun.numberOfBays];
 
         for(int i=0;i<testRun.numberOfBays;i++){
-            bayItems[i]=new BayItem(i+1,"","","Unplugged",0);
+            boolean status = testRun.rack.bays[i].active;
+            Integer offset = testRun.rack.bays[i].calibrationOffset;
+            bayItems[i]=new BayItem(i+1,status,offset);
         }
         aa= new BayItemArrayAdapter(this, bayItems);
         aa.setCustomButtonListener(TestRunActivity.this);
@@ -112,15 +117,8 @@ public class TestRunActivity extends Activity implements customButtonListener {
         listView.smoothScrollToPosition(position+2);
 
         // update results totals
-        testRun.currentStepUnitsPassed++;
-        testRun.currentStepUnitsTested++;
+        updateCounts();
 
-        Boolean showView=true;
-
-        if ( testRun.currentStepUnitsTested >= testRun.numberOfBays ) {
-            showView=loadNextStep();
-        }
-        if (showView) updateView();
     }
 
     @Override
@@ -166,31 +164,42 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 .setView(dialogView)
                 .show();
 
-        // update results totals
-        testRun.currentStepUnitsFailed++;
-        testRun.currentStepUnitsTested++;
+        updateCounts();
+    }
 
-        Boolean showView=true;
+    @Override
+    public void onScentAirBarCodeClickListener(int position, int listViewPosition) {
+        // Scentair barcode has been entered, need to scroll to the next row
+        // skip bays that are inactive
 
-        if ( testRun.currentStepUnitsTested > testRun.numberOfBays )
-        {
-            showView=loadNextStep();
+        while (!bayItems[++position].bay.active);
+
+        if (position<=testRun.numberOfBays) {
+            // if there are bays left to scroll to, move on down
+            listView.smoothScrollToPosition(position+2);
+
+            listView.setItemsCanFocus(true);
+            listView.setSelection(position);
+
+            listView.requestFocus();
         }
-
-        if (showView)updateView();
     }
 
     private void passAll () {
         // The operator has scrolled to the end of the bay list and pressed pass all.
         // Update the data to be all 'pass' (do not flag any fails here)
-        for (int i=0;i<testRun.numberOfBays;i++) {
-            //reset background colors
-            bayItems[i].stepStatus = "Passed";
+
+        // This button should only work if there were no failed tests so far
+        if (testRun.currentStepUnitsFailed == 0) {
+            for (int i = 0; i < testRun.numberOfBays; i++) {
+                //reset background colors
+                bayItems[i].stepStatus = "Passed";
+            }
+        } else {
+            // Highlight the failed tests
+            highlightFailed=true;
         }
-
-        Boolean showView=loadNextStep();
-
-        if (showView) updateView();
+        updateCounts();
     }
 
     private Boolean loadNextStep() {
@@ -203,8 +212,11 @@ public class TestRunActivity extends Activity implements customButtonListener {
         Boolean returnValue=false;
 
         for (int i=0;i<testRun.numberOfBays;i++) {
-            //reset background colors
-            bayItems[i].stepStatus = "Not Tested";
+            //If any unit has failed this step, it will be exempt from future steps.
+            if (bayItems[i].stepStatus=="Failed" || bayItems[i].stepStatus=="Failed previous step") {
+                //It has failed, skip it for the rest of the run.
+                bayItems[i].stepStatus = "Failed previous step";
+            } else bayItems[i].stepStatus = "Not Tested";
         }
 
         // Update the step complete timestamp
@@ -212,9 +224,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
         oldTestStep.setEndTime();
 
         //reset the counters
-        testRun.currentStepUnitsPassed = 0;
-        testRun.currentStepUnitsTested = 0;
-        testRun.currentStepUnitsFailed = 0;
+        updateCounts();
 
         testRun.currentTestStep++;
 
@@ -255,13 +265,35 @@ public class TestRunActivity extends Activity implements customButtonListener {
             //scroll back to the top of the list
             listView.smoothScrollToPosition(0);
         }
-
         return returnValue;
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
+    }
+
+    private void updateCounts(){
+        testRun.currentStepUnitsFailed=0;
+        testRun.currentStepUnitsPassed=0;
+        testRun.overallUnitsFailed=0;
+
+        // update results totals
+        for (int i=0;i<testRun.numberOfBays;i++) {
+            //count up the numbers of passed and failed units
+            if (bayItems[i].stepStatus=="Failed") testRun.currentStepUnitsFailed++;
+            if (bayItems[i].stepStatus=="Passed") testRun.currentStepUnitsPassed++;
+            if (bayItems[i].stepStatus=="Failed previous step") testRun.overallUnitsFailed++;
+        }
+
+        testRun.currentStepUnitsTested = testRun.currentStepUnitsFailed+testRun.currentStepUnitsPassed+testRun.overallUnitsFailed;
+
+        Boolean showView=true;
+
+        if ( testRun.currentStepUnitsTested >= testRun.numberOfActiveBays ) {
+            showView=loadNextStep();
+        }
+        if (showView) updateView();
     }
 
     private void updateView(){
@@ -279,9 +311,32 @@ public class TestRunActivity extends Activity implements customButtonListener {
         currentStepStartTime.setText(dateToStr);
 
         //Get the current progress info loaded
-        TextView currentProgress = (TextView) findViewById(R.id.test_step_progess);
-        text="Progress " + testRun.currentStepUnitsTested.toString() + "/" + testRun.numberOfBays.toString();
+        TextView currentProgress = (TextView) findViewById(R.id.test_step_progress);
+        text="Progress " + testRun.currentStepUnitsTested.toString() + "/" + testRun.numberOfActiveBays.toString();
         currentProgress.setText(text);
+
+        TextView activeBays = (TextView) findViewById(R.id.active_bays);
+        text= testRun.numberOfActiveBays.toString();
+        activeBays.setText(text);
+
+        TextView skippedBaysView = (TextView) findViewById(R.id.skipped_bays);
+        Integer skippedBays = testRun.overallUnitsFailed;
+        text= skippedBays.toString();
+        skippedBaysView.setText(text);
+
+        TextView passedView = (TextView) findViewById(R.id.number_passed);
+        text= testRun.currentStepUnitsPassed.toString();
+        passedView.setText(text);
+
+        TextView failedView = (TextView) findViewById(R.id.number_failed);
+        text= testRun.currentStepUnitsFailed.toString();
+        failedView.setText(text);
+        if (highlightFailed){
+            failedView.setBackgroundColor(Color.YELLOW);
+            highlightFailed=false;
+        } else {
+            failedView.setBackgroundColor(Color.WHITE);
+        }
 
         //Get the verify list loaded
         TextView verifyText = (TextView) findViewById(R.id.teststepverifylist);

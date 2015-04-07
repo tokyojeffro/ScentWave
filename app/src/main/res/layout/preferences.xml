@@ -1,16 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_height="fill_parent"
     android:layout_width="fill_parent">
-    <PreferenceCategory
-        android:title="First Category"
-        android:key="first_category">
-        <EditTextPreference
-            android:key="welcome_message"
-            android:title="Welcome Message"
-            android:summary="Define the Welcome message to be shown"
-            android:dialogTitle="Welcome Message"
-            android:dialogMessage="Provide a message"
-            android:defaultValue="Default welcome message" />
-    </PreferenceCategory>
-</PreferenceScreen>
+    <RelativeLayout
+        android:layout_height="600dp"
+        android:layout_width="400dp"
+        android:layout_centerInParent="true"
+        >
+        <TextView
+            android:layout_width="fill_parent"
+            android:layout_height="50dp"
+            android:textSize="30dp"
+            android:id="@+id/phidget_server_address_label"
+            android:text="Phidget Server Address:"
+            android:gravity="center_horizontal"
+            android:layout_centerHorizontal="true"
+            />
+        <EditText
+            android:layout_width="fill_parent"
+            android:layout_height="100dp"
+            android:id="@+id/phidget_server_address"
+            android:defaultValue="192.168.1.22"
+            android:layout_below="@id/phidget_server_address_label"
+            android:gravity="center_horizontal"
+            android:layout_marginBottom="50dp"
+            android:textSize="40dp"
+            />
+        <TextView
+            android:layout_width="fill_parent"
+            android:layout_height="50dp"
+            android:textSize="30dp"
+            android:id="@+id/database_server_address_label"
+            android:text="Database Server Address:"
+            android:layout_below="@id/phidget_server_address"
+            android:gravity="center_horizontal"
+            />
+        <EditText
+            android:layout_width="fill_parent"
+            android:layout_height="100dp"
+            android:id="@+id/database_server_address"
+            android:defaultValue="192.168.1.26"
+            android:layout_below="@id/database_server_address_label"
+            android:gravity="center_horizontal"
+            android:layout_marginBottom="50dp"
+            android:textSize="40dp"
+            />
+        <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_height="150dp"
+            android:layout_below="@id/database_server_address">
+            <Button
+                android:id="@+id/save_prefs_button"
+                android:layout_width="200dp"
+                android:layout_height="fill_parent"
+                android:text="Save Preferences"
+                android:textSize="20dp"
+                android:onClick="savePrefs"
+                />
+            <Button
+                android:id="@+id/cancel_prefs_button"
+                android:layout_width="200dp"
+                android:layout_height="fill_parent"
+                android:text="Cancel"
+                android:onClick="cancelPrefs"
+                android:textSize="30dp"
+                android:layout_toRightOf="@+id/save_prefs_button"
+                />
+        </RelativeLayout>
+    </RelativeLayout>
+</RelativeLayout>

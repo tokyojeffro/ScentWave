@@ -8,7 +8,6 @@ import java.util.ArrayList;
 
 // This class builds a list of failures and loads them from the test database
 public class Failures extends ArrayList<Failures> {
-    private static final String db_url = "http://192.168.1.26/dbtest.php";
     private static final String TAG_FAILURE_ID = "failureId";
     private static final String TAG_FAILURE_TEXT = "failureText";
 
@@ -22,14 +21,14 @@ public class Failures extends ArrayList<Failures> {
     }
 
     // Constructor
-    public Failures () {
+    public Failures (String dbAddress) {
        // Read the array of tests from the database on the network
 
         //Initialize the operator array list
         failures = new ArrayList<Failure>();
 
         // Get the JSON
-        String url = db_url + "/failures";
+        String url = "http://" + dbAddress + "/dbtest.php/failures";
 
         JSONParser jParser = new JSONParser();
 

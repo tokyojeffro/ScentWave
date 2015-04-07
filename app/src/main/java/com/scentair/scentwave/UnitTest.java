@@ -10,7 +10,6 @@ public class UnitTest {
     public HashMap<String, Integer> currentReadings;
     public HashMap<String, String> testResults;
 
-
     public UnitTest(Integer rackNum, Integer bayNum){
         this.rackNumber = rackNum;
         this.bayNumber = bayNum;
@@ -36,8 +35,5 @@ public class UnitTest {
         this.testResults.put("Step5", "Not tested");
         this.testResults.put("Step6", "Not tested");
         this.testResults.put("Step7", "Not tested");
-
-
-
     }
 }

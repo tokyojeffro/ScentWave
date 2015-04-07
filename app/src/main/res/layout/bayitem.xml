@@ -6,154 +6,169 @@
     android:layout_width="fill_parent"
     android:layout_height="300dp">
     <RelativeLayout
-        android:layout_width="40dp"
-        android:layout_height="fill_parent"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:background="@android:color/darker_gray" >
-        <TextView
-            android:id="@+id/baynumber"
-            android:text="1"
-            android:layout_width="34dp"
-            android:layout_height="294dp"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"
-            android:gravity="center"
-            android:layout_margin="3dp"
-            android:background="@android:color/white"
-            android:textSize="40dp"
-            />
-    </RelativeLayout>
-    <RelativeLayout
-        android:layout_width="200dp"
-        android:layout_height="fill_parent"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:background="@android:color/darker_gray" >
-        <TextView
-            android:id="@+id/mitecbarcodelabel"
-            android:text="Mitec Barcode:"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
+        <RelativeLayout
+            android:id="@+id/bay_item_inactive_bay"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:layout_alignParentStart="true"
+            android:visibility="invisible">
+            <TextView
+                android:id="@+id/bay_item_inactive_bay_1st_line"
+                android:layout_width="fill_parent"
+                android:layout_height="50dp"
+                android:textSize="30dp"
+                android:text="Bay #x is Inactive."
+                android:gravity="center"
+                android:layout_alignParentTop="true"
+                />
+            <TextView
+                android:id="@+id/bay_item_inactive_bay_2nd_line"
+                android:layout_width="fill_parent"
+                android:layout_height="50dp"
+                android:text="Use calibration to set active."
+                android:textSize="30dp"
+                android:backgroundTint="@android:color/darker_gray"
+                android:gravity="center"
+                android:layout_below="@id/bay_item_inactive_bay_1st_line"
+                />
+        </RelativeLayout>
+        <RelativeLayout
+            android:id="@+id/bay_active_row_layout"
             android:layout_width="fill_parent"
-            android:layout_height="35dp"
-            android:background="@android:color/white"
-            android:textSize="25dp"
-            />
-        <EditText
-            android:id="@+id/mitecbarcode"
-            android:layout_width="fill_parent"
-            android:layout_height="35dp"
-            android:layout_marginBottom="5dp"
-            android:background="@android:color/white"
-            android:textSize="25dp"
-            android:layout_below="@id/mitecbarcodelabel"
-            android:gravity="center_vertical|center_horizontal"
-            android:inputType="textNoSuggestions|text"
-            android:autoText="false" />
-        <TextView
-            android:id="@+id/scentairbarcodelabel"
-            android:text="Scentair Barcode:"
-            android:layout_width="fill_parent"
-            android:layout_height="35dp"
-            android:background="@android:color/white"
-            android:textSize="25dp"
-            android:layout_below="@id/mitecbarcode"
-            />
-        <EditText
-            android:id="@+id/scentairbarcode"
-            android:layout_width="fill_parent"
-            android:layout_height="35dp"
-            android:layout_marginBottom="5dp"
-            android:background="@android:color/white"
-            android:textSize="25dp"
-            android:layout_below="@+id/scentairbarcodelabel"
-            android:gravity="center_vertical|center_horizontal"
-            android:inputType="text|textNoSuggestions"/>
-        <TextView
-            android:id="@+id/software_version_label"
-            android:text="SW Version"
-            android:layout_width="fill_parent"
-            android:layout_height="35dp"
-            android:background="@android:color/white"
-            android:textSize="25dp"
-            android:layout_below="@id/scentairbarcode"
-            />
-        <EditText
-            android:id="@+id/software_version"
-            android:layout_width="fill_parent"
-            android:layout_height="35dp"
-            android:layout_marginBottom="5dp"
-            android:background="@android:color/white"
-            android:textSize="25dp"
-            android:layout_below="@+id/software_version_label"
-            android:gravity="center_vertical|center_horizontal"
-            android:inputType="text|textNoSuggestions"/>
-        <TextView
-            android:id="@+id/unitstatelabel"
-            android:text="Unit State:"
-            android:layout_width="fill_parent"
-            android:layout_height="35dp"
-            android:background="@android:color/white"
-            android:textSize="25dp"
-            android:layout_below="@+id/software_version"
-            />
-        <TextView
-            android:id="@+id/unitstate"
-            android:text="FAN LOW"
-            android:layout_width="150dp"
-            android:layout_height="40dp"
-            android:background="@android:color/white"
-            android:textSize="25dp"
-            android:layout_marginBottom="5dp"
-            android:layout_below="@+id/unitstatelabel"
-            android:gravity="center_vertical" />
-        <TextView
-            android:id="@+id/sensorreading"
-            android:text="150"
-            android:layout_width="50dp"
-            android:layout_height="40dp"
-            android:background="@android:color/white"
-            android:textSize="30dp"
-            android:gravity="right|center_vertical"
-            android:layout_marginBottom="5dp"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentEnd="true"
-            android:numeric="integer" />
-    </RelativeLayout>
-    <RelativeLayout
-        android:layout_width="180dp"
-        android:layout_height="fill_parent"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:background="@android:color/darker_gray" >
-        <Button
-            android:id="@+id/testpassbutton"
-            android:text="Pass"
-            android:layout_width="174dp"
-            android:layout_height="294dp"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"
-            android:gravity="center"
-            android:layout_margin="3dp"
-            android:textSize="20dp"
-            android:background="#99CC00"/>
-    </RelativeLayout>
-    <RelativeLayout
-        android:layout_width="180dp"
-        android:layout_height="fill_parent"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:background="@android:color/darker_gray" >
-        <Button
-            android:id="@+id/testfailbutton"
-            android:text="Fail"
-            android:layout_width="174dp"
-            android:layout_height="294dp"
-            android:layout_centerHorizontal="true"
-            android:layout_centerVertical="true"
-            android:gravity="center"
-            android:layout_margin="3dp"
-            android:textSize="25dp"
-            android:background="#FF4444"/>
+            android:layout_height="300dp"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:background="@android:color/darker_gray">
+            <RelativeLayout
+                android:layout_width="40dp"
+                android:layout_height="fill_parent"
+                android:background="@android:color/darker_gray"
+                android:id="@+id/bay_number_layout">
+                <TextView
+                    android:id="@+id/baynumber"
+                    android:text="1"
+                    android:layout_width="34dp"
+                    android:layout_height="294dp"
+                    android:gravity="center"
+                    android:background="@android:color/white"
+                    android:textSize="40dp"
+                    android:layout_marginLeft="3dp"
+                    android:layout_marginRight="3dp"
+                    android:layout_centerVertical="true"
+                    android:layout_alignParentStart="true" />
+            </RelativeLayout>
+            <RelativeLayout
+                android:id="@+id/barcode_layout"
+                android:layout_width="196dp"
+                android:layout_height="294dp"
+                android:layout_toRightOf="@id/bay_number_layout"
+                >
+                <TextView
+                    android:id="@+id/mitecbarcodelabel"
+                    android:text="Mitec Barcode:"
+                    android:layout_width="fill_parent"
+                    android:layout_height="50dp"
+                    android:background="@android:color/white"
+                    android:textSize="25dp"
+                    android:layout_alignParentTop="true" />
+                <EditText
+                    android:id="@+id/mitecbarcode"
+                    android:layout_width="fill_parent"
+                    android:layout_height="50dp"
+                    android:background="@android:color/white"
+                    android:textSize="25dp"
+                    android:gravity="center_vertical|center_horizontal"
+                    android:inputType="textNoSuggestions|text"
+                    android:autoText="false"
+                    android:layout_below="@id/mitecbarcodelabel"/>
+                <TextView
+                    android:id="@+id/scentairbarcodelabel"
+                    android:text="Scentair Barcode:"
+                    android:layout_width="fill_parent"
+                    android:layout_height="50dp"
+                    android:background="@android:color/white"
+                    android:textSize="25dp"
+                    android:layout_below="@id/mitecbarcode"/>
+                <EditText
+                    android:id="@+id/scentairbarcode"
+                    android:layout_width="fill_parent"
+                    android:layout_height="50dp"
+                    android:background="@android:color/white"
+                    android:textSize="25dp"
+                    android:gravity="center_vertical|center_horizontal"
+                    android:inputType="text|textNoSuggestions"
+                    android:layout_below="@id/scentairbarcodelabel"/>
+                <TextView
+                    android:id="@+id/unitstatelabel"
+                    android:text="Unit State:"
+                    android:layout_width="fill_parent"
+                    android:layout_height="50dp"
+                    android:background="@android:color/white"
+                    android:textSize="25dp"
+                    android:layout_below="@id/scentairbarcode"/>
+                <TextView
+                    android:id="@+id/unitstate"
+                    android:text="FAN LOW"
+                    android:layout_width="150dp"
+                    android:layout_height="50dp"
+                    android:background="@android:color/white"
+                    android:textSize="25dp"
+                    android:gravity="center_vertical"
+                    android:layout_below="@id/unitstatelabel" />
+                <TextView
+                    android:id="@+id/sensorreading"
+                    android:text="150"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:background="@android:color/white"
+                    android:textSize="30dp"
+                    android:gravity="right|center_vertical"
+                    android:numeric="integer"
+                    android:layout_toRightOf="@id/unitstate"
+                    android:layout_below="@id/unitstatelabel"
+                    />
+            </RelativeLayout>
+            <RelativeLayout
+                android:id="@+id/test_pass_button_layout"
+                android:layout_width="180dp"
+                android:layout_height="300dp"
+                android:background="@android:color/darker_gray"
+                android:layout_toRightOf="@id/barcode_layout">
+                <Button
+                    android:id="@+id/testpassbutton"
+                    android:text="Pass"
+                    android:layout_width="174dp"
+                    android:layout_height="294dp"
+                    android:gravity="center"
+                    android:textSize="20dp"
+                    android:background="#99CC00"
+                    android:layout_marginLeft="3dp"
+                    android:layout_marginRight="3dp"
+                    android:layout_alignParentTop="true"
+                    android:layout_alignParentStart="true" />
+            </RelativeLayout>
+            <RelativeLayout
+                android:layout_width="180dp"
+                android:layout_height="300dp"
+                android:background="@android:color/darker_gray"
+                android:layout_toRightOf="@id/test_pass_button_layout"
+                >
+                <Button
+                    android:id="@+id/testfailbutton"
+                    android:text="Fail"
+                    android:layout_width="174dp"
+                    android:layout_height="294dp"
+                    android:gravity="center"
+                    android:textSize="25dp"
+                    android:background="#FF4444"
+                    android:layout_marginLeft="3dp"
+                    android:layout_marginRight="3dp"
+                    android:layout_alignParentBottom="true"
+                    android:layout_alignParentEnd="true" />
+            </RelativeLayout>
+        </RelativeLayout>
     </RelativeLayout>
 </LinearLayout>
 

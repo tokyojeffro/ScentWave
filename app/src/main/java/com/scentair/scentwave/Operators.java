@@ -9,8 +9,6 @@ import java.util.ArrayList;
 import java.util.Date;
 
 public class Operators {
-    private static final String db_url = "http://192.168.1.26/dbtest.php";
-
     private static final String TAG_OPERATORS = "operator_name";
 
     static public ArrayList<String> operatorList;
@@ -19,12 +17,12 @@ public class Operators {
 
     // Constructor
     // Read the list of operators from the database on the network
-    public Operators() {
+    public Operators(String dbAddress) {
         //Initialize the operator array list
         operatorList = new ArrayList<String>();
 
         // Get the JSON
-        String url = db_url + "/operators";
+        String url = "http://" + dbAddress + "/dbtest.php/operators";
 
         JSONParser jParser = new JSONParser();
 

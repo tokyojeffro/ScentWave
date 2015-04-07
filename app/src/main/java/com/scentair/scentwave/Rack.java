@@ -1,5 +1,7 @@
 package com.scentair.scentwave;
 
+import android.content.SharedPreferences;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -9,7 +11,6 @@ public class Rack {
     public Integer[] phidgetSerialNumbers;
     static public Bay[] bays;
 
-    private static final String db_url = "http://192.168.1.26/dbtest.php";
     private static final String TAG_BAY_STATUS = "bay_status";
     private static final String TAG_BAY_NUMBER = "bay_number";
     private static final String TAG_CALIBRATION_OFFSET = "calibration_offset";
@@ -18,14 +19,14 @@ public class Rack {
 
     JSONArray json_operators = null;
 
-    public Rack (Integer number) {
+    public Rack (Integer number, String serverAddress) {
         this.number = number;
 
         phidgetSerialNumbers = new Integer[3];
         bays = new Bay[24];
 
         // Get the JSON for the assigned rack
-        String url = db_url + "/rack" + number.toString() + "bays";
+        String url = "http://" + serverAddress + "/dbtest.php/rack" + number.toString() + "bays";
 
         JSONParser jParser = new JSONParser();
 
@@ -57,7 +58,7 @@ public class Rack {
         }
 
         // Get the JSON for the assigned rack
-        url = db_url + "/rack" + number.toString() + "phidgets";
+        url = "http://" + serverAddress + "/dbtest.php/rack" + number.toString() + "phidgets";
 
         jParser = new JSONParser();
 
@@ -79,10 +80,20 @@ public class Rack {
         }
         finally {
         }
-
     }
-
     public Bay[] getBays() {
         return bays;
+    }
+
+    public Integer getActiveBays() {
+        Integer activeBays = 0;
+        for (int i = 0; i < bays.length; i++) {
+            if (bays[i].active) activeBays++;
+        }
+        return activeBays;
+    }
+
+    public Rack getRack() {
+        return this;
     }
 }

@@ -5,9 +5,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class TestRun{
-    //TODO tie in the correct racknumber through calibration
-
-    // Need to load the phidget info from here
     public Rack rack;
     public SimpleDateFormat timeRun=new SimpleDateFormat();
 
@@ -23,18 +20,21 @@ public class TestRun{
 
     public Integer currentTestStep=1;
     public Integer maxTestSteps;
-    public Integer numberOfBays=24;
-    public Integer currentEditPosition;
+    public Integer numberOfBays;
+    public Integer numberOfActiveBays;
 
-    public TestRun(Integer rackNum){
-        this.rack = new Rack(rackNum);
+    public TestRun(Integer rackNum, String dbAddress){
+        this.rack = MainActivity.rack.getRack();
         overallUnitsTested = 0;
         overallUnitsPassed = 0;
         overallUnitsFailed = 0;
+        numberOfBays = 24;
 
-        testResults = new UnitTest[numberOfBays];
+        numberOfActiveBays=rack.getActiveBays();
+
+        // Need to keep all bays included here, even though some may be inactive
+        testResults = new UnitTest[24];
     }
-
     public void setCurrentTestStep (int currentStep) {
         currentTestStep=currentStep;
     }

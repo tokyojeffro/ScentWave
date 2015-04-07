@@ -5,6 +5,7 @@ import com.scentair.scentwave.R;
 import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
 import android.view.*;
 import android.content.*;
 import android.widget.Button;
@@ -25,19 +26,24 @@ public class MainActivity extends Activity {
     public static final String TAG_OPERATOR_NAME = "OPERATOR_NAME";
     public static final String TAG_RESUME_RUN = "RESUME_RUN";
     public static final String TAG_LAST_STEP_COMPLETE = "LAST_STEP_COMPLETE";
-    public static final String TAG_PHIDGET_1 = "PHIDGET_1";
-    public static final String TAG_PHIDGET_2 = "PHIDGET_2";
-    public static final String TAG_PHIDGET_3 = "PHIDGET_3";
     public static final String TAG_RACK_NUMBER = "RACK_NUMBER";
-
+    public static final String TAG_DATABASE_SERVER_ADDRESS="DATABASE_SERVER_ADDRESS";
+    public static final String TAG_PHIDGET_SERVER_ADDRESS="PHIDGET_SERVER_ADDRESS";
 
     SharedPreferences sharedPreferences;
+    public static String phidgetServerAddress;
+    public static String dbServerAddress;
 
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+
+
+        sharedPreferences=getSharedPreferences(TAG_MYPREFS, Context.MODE_PRIVATE);
+        phidgetServerAddress = sharedPreferences.getString(TAG_PHIDGET_SERVER_ADDRESS,"");
+        dbServerAddress = sharedPreferences.getString(TAG_DATABASE_SERVER_ADDRESS,"");
 
         // Load up shared prefs and populate fields
         updateView();
@@ -78,14 +84,20 @@ public class MainActivity extends Activity {
         startActivity(intent);
     }
 
+    // layout button triggers this method to start new activity
+    public void startChangePreferences (View view) {
+        Intent intent = new Intent(this,PreferencesActivity.class);
+        startActivity(intent);
+    }
+
     private class loadDBValues extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... urls) {
-            operators = new Operators();
-            testSteps = new TestSteps();
-            failures = new Failures();
+            operators = new Operators(dbServerAddress);
+            testSteps = new TestSteps(dbServerAddress);
+            failures = new Failures(dbServerAddress);
             Integer currentRack=sharedPreferences.getInt(TAG_RACK_NUMBER,0);
-            rack = new Rack(currentRack);
+            rack = new Rack(currentRack,dbServerAddress);
 
             return urls[0];
         }
@@ -104,7 +116,6 @@ public class MainActivity extends Activity {
 
     private void updateView(){
         //Load up the shared preferences
-        sharedPreferences = getSharedPreferences(TAG_MYPREFS, Context.MODE_PRIVATE);
         String currentOperator = sharedPreferences.getString(TAG_OPERATOR_NAME,null);
         if (currentOperator==null) {
             currentOperator="not set";
@@ -128,5 +139,4 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
     }
-
 }
