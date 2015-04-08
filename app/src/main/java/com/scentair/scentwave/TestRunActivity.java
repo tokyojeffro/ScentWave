@@ -137,7 +137,8 @@ public class TestRunActivity extends Activity implements customButtonListener {
         final CharSequence[] failureStrings = new CharSequence[testStep.possibleFailures.size()];
 
         for (int i=0;i<testStep.possibleFailures.size();i++) {
-            Failure failure = failureList.get(testStep.possibleFailures.get(i));
+            Integer failureOffset = testStep.possibleFailures.get(i)-1;
+            Failure failure = failureList.get(failureOffset);
             failureStrings[i] = failure.failureText;
         }
 
@@ -350,6 +351,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
 
         TextView step2Info = (TextView) findViewById(R.id.teststepinstruction2);
         text = testStep.testStep2;
+        if (text.equals("null")) text="";
         step2Info.setText(text);
 
         aa.notifyDataSetChanged();

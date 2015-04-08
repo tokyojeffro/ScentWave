@@ -15,7 +15,6 @@ public class TestSteps {
     private static final String TAG_TEST_STEP_1 = "testStep1";
     private static final String TAG_TEST_STEP_2 = "testStep2";
     private static final String TAG_EXPECTED_RESULTS = "expectedResults";
-    private static final String TAG_POSSIBLE_FAILURES = "possibleFailures";
     private static final String TAG_TEST_STEP_ID = "testStepId";
     private static final String TAG_FAILURE_ID = "failureId";
 
@@ -50,7 +49,6 @@ public class TestSteps {
                 testStep.testStep1=q.getString(TAG_TEST_STEP_1);
                 testStep.numberOfActions=q.getInt(TAG_NUMBER_OF_ACTIONS);
                 testStep.expectedResults=q.getString(TAG_EXPECTED_RESULTS);
-                String temp = q.getString(TAG_POSSIBLE_FAILURES);
 
                 testSteps.add(testStep);
             }
