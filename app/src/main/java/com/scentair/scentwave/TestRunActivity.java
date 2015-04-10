@@ -7,17 +7,34 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.app.Activity;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import com.phidgets.InterfaceKitPhidget;
+import com.phidgets.Phidget;
+import com.phidgets.PhidgetException;
+import com.phidgets.event.AttachEvent;
+import com.phidgets.event.AttachListener;
+import com.phidgets.event.DetachEvent;
+import com.phidgets.event.DetachListener;
+import com.phidgets.event.InputChangeEvent;
+import com.phidgets.event.InputChangeListener;
+import com.phidgets.event.SensorChangeEvent;
+import com.phidgets.event.SensorChangeListener;
 import com.scentair.scentwave.BayItemArrayAdapter.customButtonListener;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
 
 public class TestRunActivity extends Activity implements customButtonListener {
+
+    private InterfaceKitPhidget ik;
+    private String phidgetServerAddress;
+    private MachineStates machineStates;
 
     TestRun testRun;
     ArrayList<TestStep> testSteps = MainActivity.testSteps.getTestSteps();
@@ -51,8 +68,9 @@ public class TestRunActivity extends Activity implements customButtonListener {
 
         // Need to make sure we pull out the calibration info before starting the test run
         // Pull the associated rack number from NVM
-        currentRack = sharedPreferences.getInt(MainActivity.TAG_RACK_NUMBER,0);
+        currentRack = sharedPreferences.getInt(MainActivity.TAG_RACK_NUMBER,1);
         String dbAddress = sharedPreferences.getString(MainActivity.TAG_DATABASE_SERVER_ADDRESS,"");
+        phidgetServerAddress = sharedPreferences.getString(MainActivity.TAG_PHIDGET_SERVER_ADDRESS,"192.168.1.22");
 
         //Initialize this test run
         testRun = new TestRun(currentRack,dbAddress);
@@ -67,6 +85,12 @@ public class TestRunActivity extends Activity implements customButtonListener {
         else {
             // We are not resuming, start from the beginning
             savedTestStep = 1;
+
+            // Reset resume status
+            editor.putInt(MainActivity.TAG_LAST_STEP_COMPLETE,-1);
+            editor.commit();
+
+
         }
         TestStep firstStep = testSteps.get(savedTestStep-1);
         firstStep.setStartTime();
@@ -96,11 +120,70 @@ public class TestRunActivity extends Activity implements customButtonListener {
             Integer offset = testRun.rack.bays[i].calibrationOffset;
             bayItems[i]=new BayItem(i+1,status,offset);
         }
+
+        if (savedTestStep==1) {
+            // The first step is to enter the barcodes.  Set the edit field
+            bayItems[0].isEditMitec=true;
+        }
+
         aa= new BayItemArrayAdapter(this, bayItems);
         aa.setCustomButtonListener(TestRunActivity.this);
 
         listView.setAdapter(aa);
 
+        //Finally, set up the machine states mapping
+        machineStates = new MachineStates();
+
+        // add the phidget interface stuff for the real time value.
+        try
+        {
+            ik = new InterfaceKitPhidget();
+            ik.addAttachListener(new AttachListener() {
+                public void attached(final AttachEvent ae) {
+                    AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), true);
+                    synchronized(handler)
+                    {
+                        runOnUiThread(handler);
+                        try {
+                            handler.wait();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            });
+            ik.addDetachListener(new DetachListener() {
+                public void detached(final DetachEvent ae) {
+                    AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), false);
+                    synchronized(handler)
+                    {
+                        runOnUiThread(handler);
+                        try {
+                            handler.wait();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            });
+            ik.addSensorChangeListener(new SensorChangeListener() {
+                public void sensorChanged(SensorChangeEvent se) {
+                    runOnUiThread(new SensorChangeRunnable(se.getIndex(), se.getValue()));
+                }
+            });
+/*  Until we need it
+            ik.addInputChangeListener(new InputChangeListener() {
+                public void inputChanged(InputChangeEvent ie) {
+                    runOnUiThread(new InputChangeRunnable(ie.getIndex(), ie.getState()));
+                }
+            });
+*/
+            ik.openAny(phidgetServerAddress, 5001);
+        }
+        catch (PhidgetException pe)
+        {
+            pe.printStackTrace();
+        }
         updateView();
     }
 
@@ -113,12 +196,19 @@ public class TestRunActivity extends Activity implements customButtonListener {
         //   change the row in some visual way (maybe change to light green background color?
         //   scroll down to the next entry
 
-        bayItems[position].stepStatus = "Passed";
-        listView.smoothScrollToPosition(position+2);
-
+        //Check to see if they are marking a previous failed unit as passed.
+        //if so, clear the data and reset to untested.
+        if (bayItems[position].stepStatus=="Failed") {
+            // Clear the previous failure cause
+            bayItems[position].failCause = "";
+            // Reset tested status
+            bayItems[position].stepStatus = "Not Tested";
+        } else {
+            bayItems[position].stepStatus = "Passed";
+            listView.smoothScrollToPosition(position+2);
+        }
         // update results totals
         updateCounts();
-
     }
 
     @Override
@@ -173,18 +263,32 @@ public class TestRunActivity extends Activity implements customButtonListener {
         // Scentair barcode has been entered, need to scroll to the next row
         // skip bays that are inactive
 
-        while (!bayItems[++position].bay.active);
+        bayItems[position].isEditScentair=false;
 
-        if (position<=testRun.numberOfBays) {
+        //TODO account for inactive bays here
+        // this doesn't work
+        //while (!bayItems[++position].bay.active);
+
+        Integer newPosition=position+1;
+
+        if (newPosition<testRun.numberOfBays) {
             // if there are bays left to scroll to, move on down
-            listView.smoothScrollToPosition(position+2);
-
-            listView.setItemsCanFocus(true);
-            listView.setSelection(position);
-
-            listView.requestFocus();
+            bayItems[newPosition].isEditMitec=true;
+            aa.notifyDataSetChanged();
+            listView.setSelection(newPosition);
         }
     }
+
+    @Override
+    public void onMitecBarCodeClickListener(int position, int listViewPosition) {
+        // Mitec barcode has been entered, need to move focus and cursor to scentair barcode
+        // skip bays that are inactive
+
+        bayItems[position].isEditMitec=false;
+        bayItems[position].isEditScentair=true;
+        aa.notifyDataSetChanged();
+    }
+
 
     private void passAll () {
         // The operator has scrolled to the end of the bay list and pressed pass all.
@@ -287,11 +391,11 @@ public class TestRunActivity extends Activity implements customButtonListener {
             if (bayItems[i].stepStatus=="Failed previous step") testRun.overallUnitsFailed++;
         }
 
-        testRun.currentStepUnitsTested = testRun.currentStepUnitsFailed+testRun.currentStepUnitsPassed+testRun.overallUnitsFailed;
+        testRun.currentStepUnitsTested = testRun.currentStepUnitsFailed+testRun.currentStepUnitsPassed;
 
         Boolean showView=true;
 
-        if ( testRun.currentStepUnitsTested >= testRun.numberOfActiveBays ) {
+        if ( testRun.currentStepUnitsTested >= (testRun.numberOfActiveBays - testRun.overallUnitsFailed) ) {
             showView=loadNextStep();
         }
         if (showView) updateView();
@@ -313,7 +417,8 @@ public class TestRunActivity extends Activity implements customButtonListener {
 
         //Get the current progress info loaded
         TextView currentProgress = (TextView) findViewById(R.id.test_step_progress);
-        text="Progress " + testRun.currentStepUnitsTested.toString() + "/" + testRun.numberOfActiveBays.toString();
+        Integer baysRemaining = testRun.numberOfActiveBays - testRun.overallUnitsFailed;
+        text="Tested " + testRun.currentStepUnitsTested.toString() + "/" + baysRemaining.toString();
         currentProgress.setText(text);
 
         TextView activeBays = (TextView) findViewById(R.id.active_bays);
@@ -342,18 +447,86 @@ public class TestRunActivity extends Activity implements customButtonListener {
         //Get the verify list loaded
         TextView verifyText = (TextView) findViewById(R.id.teststepverifylist);
         text = testStep.expectedResults;
-        verifyText.setText(text);
+        String newLine = System.getProperty("line.separator");
+        String newText=text.replaceAll("NEWLINE",newLine);
+        verifyText.setSingleLine(false);
+        verifyText.setText(newText);
 
         //Get the test step information from the Test Steps list
-        TextView step1Info = (TextView) findViewById(R.id.teststepinstruction1);
-        text = testStep.testStep1;
-        step1Info.setText(text);
-
-        TextView step2Info = (TextView) findViewById(R.id.teststepinstruction2);
-        text = testStep.testStep2;
-        if (text.equals("null")) text="";
-        step2Info.setText(text);
+        TextView stepInfo = (TextView) findViewById(R.id.teststepinstruction);
+        text = testStep.testSteps;
+        newText=text.replaceAll("NEWLINE",newLine);
+        stepInfo.setSingleLine(false);
+        stepInfo.setText(newText);
 
         aa.notifyDataSetChanged();
     }
+
+    class AttachDetachRunnable implements Runnable {
+        Phidget phidget;
+        boolean attach;
+        public AttachDetachRunnable(Phidget phidget, boolean attach)
+        {
+            this.phidget = phidget;
+            this.attach = attach;
+        }
+        public void run() {
+/*            TextView attachedTxt = (TextView) findViewById(R.id.attachedTxt);
+            if(attach)
+            {
+                attachedTxt.setText("Attached");
+                try {
+                    TextView nameTxt = (TextView) findViewById(R.id.nameTxt);
+                    TextView serialTxt = (TextView) findViewById(R.id.serialTxt);
+                    TextView versionTxt = (TextView) findViewById(R.id.versionTxt);
+
+                    nameTxt.setText(phidget.getDeviceName());
+                    serialTxt.setText(Integer.toString(phidget.getSerialNumber()));
+                    versionTxt.setText(Integer.toString(phidget.getDeviceVersion()));
+
+                } catch (PhidgetException e) {
+                    e.printStackTrace();
+                }
+            }
+            else
+                attachedTxt.setText("Detached");*/
+            //notify that we're done
+            synchronized(this)
+            {
+                this.notify();
+            }
+        }
+    }
+
+    class SensorChangeRunnable implements Runnable {
+        int sensorIndex, sensorVal;
+        public SensorChangeRunnable(int index, int val)
+        {
+            this.sensorIndex = index;
+            this.sensorVal = val;
+            //TODO need to add in the offset for the different phidgets for this rack
+
+            Log.i("TestRunSensorReadouts", String.valueOf(sensorIndex) + " " + String.valueOf(sensorVal));
+        }
+        public void run() {
+            bayItems[sensorIndex].currentValue = sensorVal;
+            bayItems[sensorIndex].unitState = machineStates.getState(sensorVal);
+            aa.notifyDataSetChanged();
+        }
+    }
+
+//    class InputChangeRunnable implements Runnable {
+//        int index;
+//        boolean val;
+//        public InputChangeRunnable(int index, boolean val)
+//        {
+//            this.index = index;
+//            this.val = val;
+//        }
+//        public void run() {
+//            if(inputCheckBoxes[index]!=null)
+//                inputCheckBoxes[index].setChecked(val);
+//        }
+//    }
+
 }

@@ -11,9 +11,7 @@ import java.util.Date;
 
 public class TestSteps {
 
-    private static final String TAG_NUMBER_OF_ACTIONS = "numberOfActions";
-    private static final String TAG_TEST_STEP_1 = "testStep1";
-    private static final String TAG_TEST_STEP_2 = "testStep2";
+    private static final String TAG_TEST_STEPS = "testSteps";
     private static final String TAG_EXPECTED_RESULTS = "expectedResults";
     private static final String TAG_TEST_STEP_ID = "testStepId";
     private static final String TAG_FAILURE_ID = "failureId";
@@ -45,9 +43,7 @@ public class TestSteps {
                 TestStep testStep= new TestStep();
                 JSONObject q = json_operators.getJSONObject(i);
                 // Storing each json item in variables
-                testStep.testStep2=q.getString(TAG_TEST_STEP_2);
-                testStep.testStep1=q.getString(TAG_TEST_STEP_1);
-                testStep.numberOfActions=q.getInt(TAG_NUMBER_OF_ACTIONS);
+                testStep.testSteps=q.getString(TAG_TEST_STEPS);
                 testStep.expectedResults=q.getString(TAG_EXPECTED_RESULTS);
 
                 testSteps.add(testStep);

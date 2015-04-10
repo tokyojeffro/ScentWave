@@ -5,22 +5,17 @@ import java.util.ArrayList;
 import java.util.Date;
 
 public class TestStep {
-    public Integer numberOfActions;
-    public String testStep1;
-    public String testStep2;
+    public String testSteps;
     public String expectedResults;
     public ArrayList<Integer> possibleFailures;
     public Date stepStartTime;
     public Date stepEndTime;
 
     public TestStep (Integer numberOfActions,
-                     String testStep1,
-                     String testStep2,
+                     String testSteps,
                      String expectedResults,
                      ArrayList<Integer> possibleFailures){
-        this.numberOfActions=numberOfActions;
-        this.testStep1=testStep1;
-        this.testStep2=testStep2;
+        this.testSteps=testSteps;
         this.expectedResults=expectedResults;
         this.possibleFailures = possibleFailures;
     }

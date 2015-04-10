@@ -42,8 +42,8 @@ public class MainActivity extends Activity {
 
 
         sharedPreferences=getSharedPreferences(TAG_MYPREFS, Context.MODE_PRIVATE);
-        phidgetServerAddress = sharedPreferences.getString(TAG_PHIDGET_SERVER_ADDRESS,"");
-        dbServerAddress = sharedPreferences.getString(TAG_DATABASE_SERVER_ADDRESS,"");
+        phidgetServerAddress = sharedPreferences.getString(TAG_PHIDGET_SERVER_ADDRESS,"192.168.1.22");
+        dbServerAddress = sharedPreferences.getString(TAG_DATABASE_SERVER_ADDRESS,"192.168.1.26");
 
         // Load up shared prefs and populate fields
         updateView();
@@ -96,7 +96,7 @@ public class MainActivity extends Activity {
             operators = new Operators(dbServerAddress);
             testSteps = new TestSteps(dbServerAddress);
             failures = new Failures(dbServerAddress);
-            Integer currentRack=sharedPreferences.getInt(TAG_RACK_NUMBER,0);
+            Integer currentRack=sharedPreferences.getInt(TAG_RACK_NUMBER,1);
             rack = new Rack(currentRack,dbServerAddress);
 
             return urls[0];

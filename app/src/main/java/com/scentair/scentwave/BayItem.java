@@ -11,6 +11,8 @@ public class BayItem{
     public String failCause;
     public Integer failCauseIndex;
     public Integer failStep;
+    public Boolean isEditMitec;
+    public Boolean isEditScentair;
 
     public BayItem(Integer bayNumber,
                    String mitecBarcode,
@@ -26,6 +28,8 @@ public class BayItem{
         this.failCause = "";
         this.failStep = 0;
         this.failCauseIndex=0;
+        this.isEditMitec=false;
+        this.isEditScentair=false;
     }
 
     //Constructor used for beginning a test run
@@ -33,12 +37,12 @@ public class BayItem{
         this.bay = new Bay (bayNumber,activeStatus,calibrationOffset);
         this.mitecBarcode = "";
         this.scentairBarcode = "";
-        this.unitState = "Unplugged";
-        //TODO fix this so it has the correct value
         this.currentValue = 0;
         this.stepStatus = "Not Tested";
         this.failCause = "";
         this.failStep = 0;
         this.failCauseIndex=0;
+        this.isEditMitec=false;
+        this.isEditScentair=false;
     }
 }

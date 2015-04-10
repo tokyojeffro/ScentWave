@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
 import android.text.Layout;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,13 +19,24 @@ import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.phidgets.InterfaceKitPhidget;
+import com.phidgets.Phidget;
+import com.phidgets.PhidgetException;
+import com.phidgets.event.AttachEvent;
+import com.phidgets.event.AttachListener;
+import com.phidgets.event.DetachEvent;
+import com.phidgets.event.DetachListener;
+import com.phidgets.event.InputChangeEvent;
+import com.phidgets.event.InputChangeListener;
+import com.phidgets.event.SensorChangeEvent;
+import com.phidgets.event.SensorChangeListener;
+
 import org.w3c.dom.Text;
 
 public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
 
     private final Context context;
     private final BayItem[] bayItems;
-    private EditText currentEditField;
 
     customButtonListener customListener;
 
@@ -33,6 +45,7 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
         void onPassButtonClickListener(int position, int listViewPosition);
         void onFailButtonClickListener(int position, int listViewPosition);
         void onScentAirBarCodeClickListener(int position, int listViewPosition);
+        void onMitecBarCodeClickListener(int position, int listViewPosition);
     }
 
     public void setCustomButtonListener(customButtonListener listener) {
@@ -57,6 +70,8 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
         super(context, R.layout.bayitem, bayItems);
         this.context = context;
         this.bayItems = bayItems;
+
+
     }
 
     @Override
@@ -113,16 +128,13 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
 
             holder.bayInactiveText.setBackgroundColor(Color.YELLOW);
             holder.bayInactiveText.setText(text);
-
-            currentEditField=null;
-
         } else {
             holder.bayInactive.setVisibility(View.INVISIBLE);
             holder.activeRowLayout.bringToFront();
             holder.activeRowLayout.setVisibility(View.VISIBLE);
 
             // This changes the row height back to normal
-            ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,500);
+            ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,600);
             holder.bayItem.setLayoutParams(params);
         }
 
@@ -153,12 +165,15 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
         holder.unitStateField.setText(bayItems[position].unitState);
         holder.sensorReadingField.setText(String.valueOf(bayItems[position].currentValue));
 
-        if (holder.mitecBarcodeField==currentEditField) {
+        // Here is where we manage the editing of the barcode fields magically
+        if (bayItems[position].isEditMitec) {
             holder.mitecBarcodeField.setBackgroundColor(Color.GRAY);
             holder.mitecBarcodeField.setCursorVisible(true);
-        } else if (holder.scentairBarcodeField==currentEditField) {
+            holder.mitecBarcodeField.requestFocus();
+        } else if (bayItems[position].isEditScentair) {
             holder.scentairBarcodeField.setBackgroundColor(Color.GRAY);
             holder.scentairBarcodeField.setCursorVisible(true);
+            holder.scentairBarcodeField.requestFocus();
         } else {
             // Not editing this row
             holder.mitecBarcodeField.setBackgroundColor(Color.WHITE);
@@ -207,12 +222,10 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
                 if (!hasFocus) {
                     bayItems[position].scentairBarcode = editText.getText().toString();
                     editText.setBackgroundColor(Color.WHITE);
-                    currentEditField=null;
                 } else {
                     // Does have focus, lets highlight the field by changing background color
                     editText.setBackgroundColor(Color.LTGRAY);
                     editText.setCursorVisible(true);
-                    currentEditField = editText;
                 }
             }
         });
@@ -242,11 +255,26 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
                 if (!hasFocus) {
                     bayItems[position].mitecBarcode = editText.getText().toString();
                     editText.setBackgroundColor(Color.WHITE);
-                    currentEditField=null;
                 } else {
                     v.setBackgroundColor(Color.LTGRAY);
                     editText.setCursorVisible(true);
-                    currentEditField = editText;
+                }
+            }
+        });
+        holder.mitecBarcodeField.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Need to move the focus and cursor to the next viable Mitec bar code field
+                // Need to skip inactive bays
+                View parentRow = (View) v.getParent();
+                View grandParent = (View) parentRow.getParent();
+                View greatGrantParent = (View) grandParent.getParent();
+                View greatGreatGrandParent = (View) greatGrantParent.getParent();
+
+                ListView listView = (ListView) greatGreatGrandParent.getParent();
+                final int listViewPosition = listView.getPositionForView(parentRow);
+                if (customListener != null) {
+                    customListener.onMitecBarCodeClickListener(position,listViewPosition);
                 }
             }
         });
@@ -261,4 +289,8 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
             bayItems[i].stepStatus = "Passed";
         }
     }
+
+
+
+
 }

@@ -57,7 +57,9 @@
                     android:layout_marginLeft="3dp"
                     android:layout_marginRight="3dp"
                     android:layout_centerVertical="true"
-                    android:layout_alignParentStart="true" />
+                    android:layout_alignParentStart="true"
+                    android:layout_alignParentTop="true"
+                    />
             </RelativeLayout>
             <RelativeLayout
                 android:id="@+id/barcode_layout"
@@ -69,14 +71,14 @@
                     android:id="@+id/mitecbarcodelabel"
                     android:text="Mitec Barcode:"
                     android:layout_width="fill_parent"
-                    android:layout_height="50dp"
+                    android:layout_height="39dp"
                     android:background="@android:color/white"
                     android:textSize="25dp"
                     android:layout_alignParentTop="true" />
                 <EditText
                     android:id="@+id/mitecbarcode"
                     android:layout_width="fill_parent"
-                    android:layout_height="50dp"
+                    android:layout_height="59dp"
                     android:background="@android:color/white"
                     android:textSize="25dp"
                     android:gravity="center_vertical|center_horizontal"
@@ -87,14 +89,14 @@
                     android:id="@+id/scentairbarcodelabel"
                     android:text="Scentair Barcode:"
                     android:layout_width="fill_parent"
-                    android:layout_height="50dp"
+                    android:layout_height="39dp"
                     android:background="@android:color/white"
                     android:textSize="25dp"
                     android:layout_below="@id/mitecbarcode"/>
                 <EditText
                     android:id="@+id/scentairbarcode"
                     android:layout_width="fill_parent"
-                    android:layout_height="50dp"
+                    android:layout_height="59dp"
                     android:background="@android:color/white"
                     android:textSize="25dp"
                     android:gravity="center_vertical|center_horizontal"
@@ -104,27 +106,27 @@
                     android:id="@+id/unitstatelabel"
                     android:text="Unit State:"
                     android:layout_width="fill_parent"
-                    android:layout_height="50dp"
+                    android:layout_height="39dp"
                     android:background="@android:color/white"
                     android:textSize="25dp"
                     android:layout_below="@id/scentairbarcode"/>
                 <TextView
                     android:id="@+id/unitstate"
                     android:text="FAN LOW"
-                    android:layout_width="150dp"
-                    android:layout_height="50dp"
+                    android:layout_width="110dp"
+                    android:layout_height="59dp"
                     android:background="@android:color/white"
-                    android:textSize="25dp"
+                    android:textSize="20dp"
                     android:gravity="center_vertical"
                     android:layout_below="@id/unitstatelabel" />
                 <TextView
                     android:id="@+id/sensorreading"
                     android:text="150"
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
+                    android:layout_width="86dp"
+                    android:layout_height="59dp"
                     android:background="@android:color/white"
                     android:textSize="30dp"
-                    android:gravity="right|center_vertical"
+                    android:gravity="center_horizontal|center_vertical"
                     android:numeric="integer"
                     android:layout_toRightOf="@id/unitstate"
                     android:layout_below="@id/unitstatelabel"
@@ -165,7 +167,7 @@
                     android:background="#FF4444"
                     android:layout_marginLeft="3dp"
                     android:layout_marginRight="3dp"
-                    android:layout_alignParentBottom="true"
+                    android:layout_alignParentTop="true"
                     android:layout_alignParentEnd="true" />
             </RelativeLayout>
         </RelativeLayout>
