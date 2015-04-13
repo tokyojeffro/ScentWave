@@ -105,24 +105,5 @@ public class TestSteps {
         return testSteps.size();
     }
 
-    public void setStartTime (int position) {
-        TestStep testStep = testSteps.get(position);
-        testStep.setStartTime();
-    }
-
-    public void setEndTime (int position) {
-        TestStep testStep = testSteps.get(position);
-        testStep.setEndTime();
-    }
-
-    public Date getStartTime (int position) {
-        TestStep testStep = testSteps.get(position);
-        return testStep.getStartTime();
-    }
-
-    public Date getEndTime (int position) {
-        TestStep testStep = testSteps.get(position);
-        return testStep.getEndTime();
-    }
 
 }

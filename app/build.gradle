@@ -26,6 +26,7 @@ dependencies {
     compile files('libs/phidget21.jar')
     compile 'com.android.support:appcompat-v7:22.0.0'
     compile 'com.android.support:support-v4:22.0.0'
+    provided 'com.google.code.gson:gson:2.2.4'
 }
 
 task nativeLibsToJar(type: Zip, description: 'create a jar archive of the native libs') {

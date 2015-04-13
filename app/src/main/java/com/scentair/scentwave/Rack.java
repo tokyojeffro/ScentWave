@@ -9,7 +9,9 @@ import org.json.JSONObject;
 public class Rack {
     public Integer number;
     public Integer[] phidgetSerialNumbers;
-    static public Bay[] bays;
+     public Bay[] bays;
+    public final Integer numberOfBays=24;
+    public final Integer numberOfPhidgetsPerRack=numberOfBays/8;
 
     private static final String TAG_BAY_STATUS = "bay_status";
     private static final String TAG_BAY_NUMBER = "bay_number";
@@ -22,8 +24,8 @@ public class Rack {
     public Rack (Integer number, String serverAddress) {
         this.number = number;
 
-        phidgetSerialNumbers = new Integer[3];
-        bays = new Bay[24];
+        phidgetSerialNumbers = new Integer[numberOfPhidgetsPerRack];
+        bays = new Bay[numberOfBays];
 
         // Get the JSON for the assigned rack
         String url = "http://" + serverAddress + "/dbtest.php/rack" + number.toString() + "bays";

@@ -20,12 +20,12 @@ public class MainActivity extends Activity {
     public static TestSteps testSteps;
     public static Failures failures;
     public static Rack rack;
+    private Boolean resumeRun = false;
 
     // These are the tags for the data stored in NVM as preferences
     public static final String TAG_MYPREFS = "ScentwavePrefs";
     public static final String TAG_OPERATOR_NAME = "OPERATOR_NAME";
-    public static final String TAG_RESUME_RUN = "RESUME_RUN";
-    public static final String TAG_LAST_STEP_COMPLETE = "LAST_STEP_COMPLETE";
+    public static final String TAG_RESUME_AVAILABLE = "RESUME_AVAILABLE";
     public static final String TAG_RACK_NUMBER = "RACK_NUMBER";
     public static final String TAG_DATABASE_SERVER_ADDRESS="DATABASE_SERVER_ADDRESS";
     public static final String TAG_PHIDGET_SERVER_ADDRESS="PHIDGET_SERVER_ADDRESS";
@@ -44,6 +44,7 @@ public class MainActivity extends Activity {
         sharedPreferences=getSharedPreferences(TAG_MYPREFS, Context.MODE_PRIVATE);
         phidgetServerAddress = sharedPreferences.getString(TAG_PHIDGET_SERVER_ADDRESS,"192.168.1.22");
         dbServerAddress = sharedPreferences.getString(TAG_DATABASE_SERVER_ADDRESS,"192.168.1.26");
+        resumeRun = sharedPreferences.getBoolean(TAG_RESUME_AVAILABLE,false);
 
         // Load up shared prefs and populate fields
         updateView();
@@ -68,7 +69,7 @@ public class MainActivity extends Activity {
     // This button is hidden unless a resume is possible
     public void resumeTestRun (View view) {
         Intent intent = new Intent(this,TestRunActivity.class);
-        intent.putExtra(TAG_RESUME_RUN, true);
+        intent.putExtra(TAG_RESUME_AVAILABLE, true);
         startActivity(intent);
     }
 
@@ -123,8 +124,8 @@ public class MainActivity extends Activity {
         TextView textView = (TextView) findViewById(R.id.current_operator);
         textView.setText(currentOperator);
 
-        Integer currentTestStep = sharedPreferences.getInt(TAG_LAST_STEP_COMPLETE,0);
-        if (currentTestStep!=-1) {
+        resumeRun = sharedPreferences.getBoolean(TAG_RESUME_AVAILABLE,false);
+        if (resumeRun) {
             // The tests were not completed, offer the option to start at the last step completed.
             Button button = (Button) findViewById(R.id.ResumeTestButton);
             button.setVisibility(Button.VISIBLE);

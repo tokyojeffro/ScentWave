@@ -1,51 +1,32 @@
 package com.scentair.scentwave;
 
-import android.app.ActionBar;
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
-import android.text.Layout;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
-
-import com.phidgets.InterfaceKitPhidget;
-import com.phidgets.Phidget;
-import com.phidgets.PhidgetException;
-import com.phidgets.event.AttachEvent;
-import com.phidgets.event.AttachListener;
-import com.phidgets.event.DetachEvent;
-import com.phidgets.event.DetachListener;
-import com.phidgets.event.InputChangeEvent;
-import com.phidgets.event.InputChangeListener;
-import com.phidgets.event.SensorChangeEvent;
-import com.phidgets.event.SensorChangeListener;
-
-import org.w3c.dom.Text;
 
 public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
 
     private final Context context;
-    private final BayItem[] bayItems;
-
+    
+    private TestRun testRun=new TestRun();
+    
     customButtonListener customListener;
 
     public interface customButtonListener {
 
         void onPassButtonClickListener(int position, int listViewPosition);
         void onFailButtonClickListener(int position, int listViewPosition);
-        void onScentAirBarCodeClickListener(int position, int listViewPosition);
-        void onMitecBarCodeClickListener(int position, int listViewPosition);
+        void onScentAirBarCodeClickListener(int position, String candidateText);
+        void onMitecBarCodeClickListener(int position, String candidateText);
+        void onScentAirBarCodeFocusChangeListener(int position, boolean touchFocusSelect);
+        void onMitecBarCodeFocusChangeListener(int position, boolean touchFocusSelect);
     }
 
     public void setCustomButtonListener(customButtonListener listener) {
@@ -69,21 +50,24 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
     public BayItemArrayAdapter(Context context, BayItem[] bayItems) {
         super(context, R.layout.bayitem, bayItems);
         this.context = context;
-        this.bayItems = bayItems;
-
-
     }
 
+    public BayItemArrayAdapter(Context context, TestRun _testRun) {
+        super(context, R.layout.bayitem, _testRun.bayItems);
+        this.context = context;
+        this.testRun = new TestRun();
+        this.testRun = _testRun.getTestRun();
+    }
+    
     @Override
     public View getView(final int position, View convertView, ViewGroup parent) {
         View rowView = convertView;
-
         if (rowView == null) {
             ViewHolder viewHolder = new ViewHolder();
 
             LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             rowView = inflater.inflate(R.layout.bayitem, parent, false);
-            viewHolder = new ViewHolder();
+
             viewHolder.passButton = (Button) rowView.findViewById(R.id.testpassbutton);
             viewHolder.failButton = (Button) rowView.findViewById(R.id.testfailbutton);
 
@@ -108,7 +92,8 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
         ViewHolder holder = (ViewHolder) rowView.getTag();
 
         // Check whether the bay is calibrated active or inactive
-        if (!bayItems[position].bay.active || (bayItems[position].stepStatus!="Failed" && bayItems[position].failCause!="")) {
+        if ((!testRun.bayItems[position].isActive) || (testRun.bayItems[position].stepStatus.equals("Failed previous step")))
+        {
             // Try to overlay a message that says 'Bay Inactive' and limit touch
             holder.bayInactive.setVisibility(View.VISIBLE);
             holder.bayInactive.bringToFront();
@@ -117,16 +102,17 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
             // This changes the height of the inactive row to 100 from 300
             ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,100);
             holder.bayItem.setLayoutParams(params);
-            String text = new String();
+            String text = "";
             Integer visiblePosition = position+1;
 
-            if (!bayItems[position].bay.active) {
+            if (!testRun.bayItems[position].isActive) {
                 text = "Bay " + visiblePosition + " is Inactive.  Change in calibration";
             } else {
-                text = "Defect Unit at " + visiblePosition + ":" + bayItems[position].failCause;
+                text = "Bay " + visiblePosition + ":Fail step:" + testRun.bayItems[position].failStep + ":"+ testRun.bayItems[position].failCause;
             }
 
             holder.bayInactiveText.setBackgroundColor(Color.YELLOW);
+            holder.bayInactiveText.setTextSize(15);
             holder.bayInactiveText.setText(text);
         } else {
             holder.bayInactive.setVisibility(View.INVISIBLE);
@@ -138,13 +124,30 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
             holder.bayItem.setLayoutParams(params);
         }
 
-        if (bayItems[position].stepStatus.equals("Not Tested")) {
+        // This is the pass button logic
+
+        if (testRun.bayItems[position].stepStatus.equals("Not Tested")) {
             //Make sure the button text is set back to default
-            holder.passButton.setText("Pass");
             holder.failButton.setText("Fail");
-            holder.passButton.setBackgroundColor(Color.parseColor("#99CC00"));
             holder.failButton.setBackgroundColor(Color.parseColor("#FF4444"));
-        } else if (bayItems[position].stepStatus.equals("Passed")) {
+
+            String returnValue = testRun.bayItems[position].isPassReady(testRun.currentTestStep);
+            holder.passButton.setText(returnValue);
+
+            if (returnValue.equals("Pass")){
+                // The criteria for pass are met, enable the button and set the color to green
+                holder.passButton.setBackgroundColor(Color.parseColor("#99CC00"));
+            } else if (returnValue.equals("Passed")) {
+                // Little bit of a hack to mark the row as pass if the test for this bay is done
+                holder.passButton.setText("Step Complete");
+                holder.failButton.setText("");
+                holder.passButton.setBackgroundColor(Color.parseColor("#99CC00"));
+                holder.failButton.setBackgroundColor(Color.parseColor("#99CC00"));
+            } else {
+                // criteria not met yet, turn gray and show the return message
+                holder.passButton.setBackgroundColor(Color.LTGRAY);
+            }
+        } else if (testRun.bayItems[position].stepStatus.equals("Passed")) {
             // Gray things out and set text to passed
             holder.passButton.setText("Step Complete");
             holder.failButton.setText("");
@@ -153,25 +156,25 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
         } else {
             // Step failed for that bay
             holder.passButton.setText("Failed");
-            holder.failButton.setText(bayItems[position].failCause);
+            holder.failButton.setText(testRun.bayItems[position].failCause);
             holder.passButton.setBackgroundColor(Color.parseColor("#FF4444"));
             holder.failButton.setBackgroundColor(Color.parseColor("#FF4444"));
         }
 
         // Load the data from the array into the view
-        holder.mitecBarcodeField.setText(bayItems[position].mitecBarcode);
-        holder.bayNumberField.setText(String.valueOf(bayItems[position].bay.bayNumber));
-        holder.scentairBarcodeField.setText(bayItems[position].scentairBarcode);
-        holder.unitStateField.setText(bayItems[position].unitState);
-        holder.sensorReadingField.setText(String.valueOf(bayItems[position].currentValue));
+        holder.mitecBarcodeField.setText(testRun.bayItems[position].mitecBarcode);
+        holder.bayNumberField.setText(String.valueOf(testRun.bayItems[position].bayNumber));
+        holder.scentairBarcodeField.setText(testRun.bayItems[position].scentairBarcode);
+        holder.unitStateField.setText(testRun.bayItems[position].unitState);
+        holder.sensorReadingField.setText(String.valueOf(testRun.bayItems[position].currentValue));
 
         // Here is where we manage the editing of the barcode fields magically
-        if (bayItems[position].isEditMitec) {
-            holder.mitecBarcodeField.setBackgroundColor(Color.GRAY);
+        if (testRun.bayItems[position].isEditMitec) {
+            holder.mitecBarcodeField.setBackgroundColor(Color.LTGRAY);
             holder.mitecBarcodeField.setCursorVisible(true);
             holder.mitecBarcodeField.requestFocus();
-        } else if (bayItems[position].isEditScentair) {
-            holder.scentairBarcodeField.setBackgroundColor(Color.GRAY);
+        } else if (testRun.bayItems[position].isEditScentair) {
+            holder.scentairBarcodeField.setBackgroundColor(Color.LTGRAY);
             holder.scentairBarcodeField.setCursorVisible(true);
             holder.scentairBarcodeField.requestFocus();
         } else {
@@ -185,15 +188,19 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
         holder.passButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                View parentRow = (View) v.getParent();
-                View grandParent = (View) parentRow.getParent();
-                View greatGrantParent = (View) grandParent.getParent();
-                View greatGreatGrandParent = (View) greatGrantParent.getParent();
+                String bayStatus = testRun.bayItems[position].isPassReady(testRun.currentTestStep);
+                // Only enable the pass button if the criteria have been met.
+                if (bayStatus.equals("Pass")) {
+                    View parentRow = (View) v.getParent();
+                    View grandParent = (View) parentRow.getParent();
+                    View greatGrantParent = (View) grandParent.getParent();
+                    View greatGreatGrandParent = (View) greatGrantParent.getParent();
 
-                ListView listView = (ListView) greatGreatGrandParent.getParent();
-                final int listViewPosition = listView.getPositionForView(parentRow);
-                if (customListener != null) {
-                    customListener.onPassButtonClickListener(position, listViewPosition);
+                    ListView listView = (ListView) greatGreatGrandParent.getParent();
+                    final int listViewPosition = listView.getPositionForView(parentRow);
+                    if (customListener != null) {
+                        customListener.onPassButtonClickListener(position, listViewPosition);
+                    }
                 }
             }
         });
@@ -219,13 +226,18 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
             public void onFocusChange(View v, boolean hasFocus) {
                 final EditText editText = (EditText) v;
                 boolean touchFocusSelect = editText.didTouchFocusSelect();
+
                 if (!hasFocus) {
-                    bayItems[position].scentairBarcode = editText.getText().toString();
                     editText.setBackgroundColor(Color.WHITE);
                 } else {
                     // Does have focus, lets highlight the field by changing background color
                     editText.setBackgroundColor(Color.LTGRAY);
                     editText.setCursorVisible(true);
+                    // Clear the text stored in the edit field
+                    editText.setText("");
+                    if (customListener != null) {
+                        customListener.onScentAirBarCodeFocusChangeListener(position, touchFocusSelect);
+                    }
                 }
             }
         });
@@ -235,15 +247,12 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
             public void onClick(View v) {
                 // Need to move the focus and cursor to the next viable Mitec bar code field
                 // Need to skip inactive bays
-                    View parentRow = (View) v.getParent();
-                    View grandParent = (View) parentRow.getParent();
-                    View greatGrantParent = (View) grandParent.getParent();
-                    View greatGreatGrandParent = (View) greatGrantParent.getParent();
+                EditText editText = (EditText) v;
 
-                    ListView listView = (ListView) greatGreatGrandParent.getParent();
-                    final int listViewPosition = listView.getPositionForView(parentRow);
+                String candidateText = editText.getText().toString();
+
                     if (customListener != null) {
-                        customListener.onScentAirBarCodeClickListener(position,listViewPosition);
+                        customListener.onScentAirBarCodeClickListener(position,candidateText);
                     }
                 }
         });
@@ -252,12 +261,17 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
                 final EditText editText = (EditText) v;
+                Boolean touchFocusSelect = editText.didTouchFocusSelect();
+
                 if (!hasFocus) {
-                    bayItems[position].mitecBarcode = editText.getText().toString();
                     editText.setBackgroundColor(Color.WHITE);
                 } else {
                     v.setBackgroundColor(Color.LTGRAY);
                     editText.setCursorVisible(true);
+                    editText.setText("");
+                    if (customListener != null) {
+                        customListener.onMitecBarCodeFocusChangeListener(position, touchFocusSelect);
+                    }
                 }
             }
         });
@@ -266,31 +280,14 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
             public void onClick(View v) {
                 // Need to move the focus and cursor to the next viable Mitec bar code field
                 // Need to skip inactive bays
-                View parentRow = (View) v.getParent();
-                View grandParent = (View) parentRow.getParent();
-                View greatGrantParent = (View) grandParent.getParent();
-                View greatGreatGrandParent = (View) greatGrantParent.getParent();
+                EditText editText= (EditText) v;
+                String candidateText = editText.getText().toString();
 
-                ListView listView = (ListView) greatGreatGrandParent.getParent();
-                final int listViewPosition = listView.getPositionForView(parentRow);
                 if (customListener != null) {
-                    customListener.onMitecBarCodeClickListener(position,listViewPosition);
+                    customListener.onMitecBarCodeClickListener(position,candidateText);
                 }
             }
         });
         return rowView;
     }
-
-    public void passAll(View v) {
-        // The operator has scrolled to the end of the bay list and pressed pass all.
-        // Update the data to be all 'pass' (do not flag any fails here)
-        for (int i = 0; i < bayItems.length; i++) {
-            //reset background colors
-            bayItems[i].stepStatus = "Passed";
-        }
-    }
-
-
-
-
 }

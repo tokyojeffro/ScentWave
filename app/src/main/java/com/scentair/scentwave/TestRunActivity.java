@@ -10,10 +10,12 @@ import android.app.Activity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.google.gson.Gson;
 import com.phidgets.InterfaceKitPhidget;
 import com.phidgets.Phidget;
 import com.phidgets.PhidgetException;
@@ -32,13 +34,15 @@ import java.util.ArrayList;
 
 public class TestRunActivity extends Activity implements customButtonListener {
 
+    public static final String TAG_SAVED_TEST_RUN="SAVED_TEST_RUN";
+
     private InterfaceKitPhidget ik;
     private String phidgetServerAddress;
     private MachineStates machineStates;
 
     TestRun testRun;
+    Rack rack;
     ArrayList<TestStep> testSteps = MainActivity.testSteps.getTestSteps();
-    BayItem[] bayItems;
     ListView listView;
     BayItemArrayAdapter aa;
     Context context;
@@ -46,7 +50,13 @@ public class TestRunActivity extends Activity implements customButtonListener {
     SharedPreferences sharedPreferences;
     SharedPreferences.Editor editor;
     public Integer currentRack;
+    public String currentOperator;
     private boolean highlightFailed = false;
+    private View footerView;
+
+    // These are used to save the current state of the test run to prefs
+    private String testRunSavedState;
+    Gson gson;
 
     /** Called when the activity is first created. */
     @Override
@@ -63,46 +73,51 @@ public class TestRunActivity extends Activity implements customButtonListener {
         Bundle extras = getIntent().getExtras();
         Boolean resume=false;
         if (extras!=null) {
-            resume=extras.getBoolean(MainActivity.TAG_RESUME_RUN);
+            resume=extras.getBoolean(MainActivity.TAG_RESUME_AVAILABLE);
         }
 
         // Need to make sure we pull out the calibration info before starting the test run
         // Pull the associated rack number from NVM
         currentRack = sharedPreferences.getInt(MainActivity.TAG_RACK_NUMBER,1);
-        String dbAddress = sharedPreferences.getString(MainActivity.TAG_DATABASE_SERVER_ADDRESS,"");
+        currentOperator = sharedPreferences.getString(MainActivity.TAG_OPERATOR_NAME,"");
+        //String dbAddress = sharedPreferences.getString(MainActivity.TAG_DATABASE_SERVER_ADDRESS,"");
         phidgetServerAddress = sharedPreferences.getString(MainActivity.TAG_PHIDGET_SERVER_ADDRESS,"192.168.1.22");
 
-        //Initialize this test run
-        testRun = new TestRun(currentRack,dbAddress);
-        // Make sure we read the test steps from the proper data structure
-        testRun.maxTestSteps = testSteps.size();
-        Integer savedTestStep = sharedPreferences.getInt(MainActivity.TAG_LAST_STEP_COMPLETE,0);
+        failureList = MainActivity.failures.getFailures();
+        rack = MainActivity.rack.getRack();
+
+        //Finally, set up the machine states mapping
+        machineStates = new MachineStates();
+
+        //Initialize Gson object;
+        gson = new Gson();
+
+        testRun = new TestRun();
 
         if (resume) {
-            // Get the step to start on from preferences
-            testRun.setCurrentTestStep(savedTestStep);
+            // Get the saved test run from prefs to start on from preferences
+            testRunSavedState = sharedPreferences.getString(TAG_SAVED_TEST_RUN,"");
+
+            testRun = gson.fromJson(testRunSavedState,TestRun.class);
         }
         else {
-            // We are not resuming, start from the beginning
-            savedTestStep = 1;
+            //Initialize this test run
+            testRun = new TestRun(currentOperator, MainActivity.rack,testSteps.size());
+            // Make sure we read the test steps from the proper data structure
 
-            // Reset resume status
-            editor.putInt(MainActivity.TAG_LAST_STEP_COMPLETE,-1);
+
+            // Reset resume status and clear saved test run
+            editor.putBoolean(MainActivity.TAG_RESUME_AVAILABLE, false);
+            editor.putString(TAG_SAVED_TEST_RUN,"");
             editor.commit();
-
-
         }
-        TestStep firstStep = testSteps.get(savedTestStep-1);
-        firstStep.setStartTime();
-
-        failureList = MainActivity.failures.getFailures();
 
         //Need to build out the bay list here.
         //The bay list is a set of fragments attached to a special adapter
         listView = (ListView) findViewById(R.id.list_view);
         listView.setItemsCanFocus(true);
 
-        View footerView =  ((LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.baylistfooter, null, false);
+        footerView =  ((LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.baylistfooter, null, false);
         listView.addFooterView(footerView);
 
         Button passAllButton = (Button) findViewById(R.id.pass_all_button);
@@ -113,26 +128,12 @@ public class TestRunActivity extends Activity implements customButtonListener {
             }
         });
 
-        bayItems= new BayItem[testRun.numberOfBays];
-
-        for(int i=0;i<testRun.numberOfBays;i++){
-            boolean status = testRun.rack.bays[i].active;
-            Integer offset = testRun.rack.bays[i].calibrationOffset;
-            bayItems[i]=new BayItem(i+1,status,offset);
-        }
-
-        if (savedTestStep==1) {
-            // The first step is to enter the barcodes.  Set the edit field
-            bayItems[0].isEditMitec=true;
-        }
-
-        aa= new BayItemArrayAdapter(this, bayItems);
+        aa= new BayItemArrayAdapter(this, testRun);
         aa.setCustomButtonListener(TestRunActivity.this);
 
         listView.setAdapter(aa);
 
-        //Finally, set up the machine states mapping
-        machineStates = new MachineStates();
+        if (resume) listView.smoothScrollToPosition(testRun.currentBay);
 
         // add the phidget interface stuff for the real time value.
         try
@@ -198,13 +199,13 @@ public class TestRunActivity extends Activity implements customButtonListener {
 
         //Check to see if they are marking a previous failed unit as passed.
         //if so, clear the data and reset to untested.
-        if (bayItems[position].stepStatus=="Failed") {
+        if (testRun.bayItems[position].stepStatus.equals("Failed")) {
             // Clear the previous failure cause
-            bayItems[position].failCause = "";
+            testRun.bayItems[position].failCause = "";
             // Reset tested status
-            bayItems[position].stepStatus = "Not Tested";
+            testRun.bayItems[position].stepStatus = "Not Tested";
         } else {
-            bayItems[position].stepStatus = "Passed";
+            testRun.bayItems[position].stepStatus = "Passed";
             listView.smoothScrollToPosition(position+2);
         }
         // update results totals
@@ -232,9 +233,9 @@ public class TestRunActivity extends Activity implements customButtonListener {
             failureStrings[i] = failure.failureText;
         }
 
-        bayItems[position].stepStatus = "Failed";
-        bayItems[position].failStep = testRun.currentTestStep;
-        listView.smoothScrollToPosition(position+2);
+        testRun.bayItems[position].stepStatus = "Failed";
+        testRun.bayItems[position].failStep = testRun.currentTestStep;
+
 
         final int bayPosition = position;
 
@@ -248,44 +249,103 @@ public class TestRunActivity extends Activity implements customButtonListener {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         //Load the proper failure reason into the failure field
-                        bayItems[bayPosition].failCause = failureStrings[which].toString();
+                        testRun.bayItems[bayPosition].failCause = failureStrings[which].toString();
                         aa.notifyDataSetChanged();
                     }
                 })
                 .setView(dialogView)
                 .show();
 
+        testRun.bayItems[bayPosition].failStep=testRun.currentTestStep;
+
+        // If we are in test step 1 (entering barcodes, then move the cursor to the next active bay)
+        if (testRun.currentTestStep==1) {
+            Integer nextBay = testRun.getNextActiveBay(position);
+            // Clear any edits from this bay
+            testRun.bayItems[position].isEditMitec=false;
+            testRun.bayItems[position].isEditScentair=false;
+            // Set the focus to the next active bay
+            testRun.bayItems[position].isEditMitec=true;
+        }
+        listView.smoothScrollToPosition(position+2);
         updateCounts();
     }
 
     @Override
-    public void onScentAirBarCodeClickListener(int position, int listViewPosition) {
+    public void onScentAirBarCodeClickListener(int position, String candidateText) {
         // Scentair barcode has been entered, need to scroll to the next row
         // skip bays that are inactive
+        Integer nextBay = 0;
+        testRun.bayItems[position].isEditScentair=false;
 
-        bayItems[position].isEditScentair=false;
+        // First, check to see if the barcode is a valid scentair barcode
+        if (candidateText.endsWith(".00")) {
+            // This is a valid scentair barcode
+            // Save it into the array
+            // Check to see if the mitec field is also entered for this position, then move focus to the next row mitec field
+            // If the mitec field is not entered, keep the focus on this row.
+            testRun.bayItems[position].scentairBarcode=candidateText;
 
-        //TODO account for inactive bays here
-        // this doesn't work
-        //while (!bayItems[++position].bay.active);
+            if (testRun.bayItems[position].mitecBarcode.isEmpty()) {
+                // Keep the focus on this row before moving on.
+                nextBay = position;
 
-        Integer newPosition=position+1;
+            } else nextBay = testRun.getNextActiveBay(position);
 
-        if (newPosition<testRun.numberOfBays) {
-            // if there are bays left to scroll to, move on down
-            bayItems[newPosition].isEditMitec=true;
-            aa.notifyDataSetChanged();
-            listView.setSelection(newPosition);
+            testRun.bayItems[nextBay].isEditMitec = true;
+
+            if (nextBay<rack.numberOfBays) {
+                // if there are bays left to scroll to, move on down
+                listView.setSelection(nextBay);
+            }
+        } else if (candidateText.contains("REV")) {
+            // This is a valid Mitec barcode.  Put it where it belongs and keep focus here.
+            testRun.bayItems[position].mitecBarcode=candidateText;
+            testRun.bayItems[position].isEditScentair=true;
+        } else {
+            // This is not a valid barcode for either type.  Keep focus here
+            testRun.bayItems[position].isEditScentair=true;
         }
+        aa.notifyDataSetChanged();
     }
 
     @Override
-    public void onMitecBarCodeClickListener(int position, int listViewPosition) {
-        // Mitec barcode has been entered, need to move focus and cursor to scentair barcode
-        // skip bays that are inactive
+    public void onMitecBarCodeClickListener(int position, String candidateText) {
+        // Something has been entered into the mitec field
+        // validate it and enter it if is good.  then move to scentair field
+        // need to move focus and cursor to scentair barcode
 
-        bayItems[position].isEditMitec=false;
-        bayItems[position].isEditScentair=true;
+        Integer nextBay = 0;
+        testRun.bayItems[position].isEditMitec=false;
+
+        // First, check to see if the barcode is a valid scentair barcode
+        if (candidateText.contains("REV")) {
+            // This is a valid mitec barcode
+            // Save it into the array
+            // Check to see if the scentair field is also entered for this position, if not, move focus to that
+            // if there is a scentair code already entered, move to next active bay mitec field.
+            testRun.bayItems[position].mitecBarcode=candidateText;
+
+            if (testRun.bayItems[position].scentairBarcode.isEmpty()) {
+                // Keep the focus on this row before moving on.
+                nextBay = position;
+                testRun.bayItems[nextBay].isEditScentair=true;
+            } else {
+                nextBay = testRun.getNextActiveBay(position);
+                if (nextBay<rack.numberOfBays) {
+                    // if there are bays left to scroll to, move on down
+                    testRun.bayItems[nextBay].isEditMitec = true;
+                    listView.setSelection(nextBay);
+                }
+            }
+        } else if (candidateText.endsWith(".00")) {
+            // This is a valid scentair barcode.  Put it where it belongs and keep focus here.
+            testRun.bayItems[position].scentairBarcode=candidateText;
+            testRun.bayItems[position].isEditMitec=true;
+        } else {
+            // This is not a valid barcode for either type.  Keep focus here
+            testRun.bayItems[position].isEditMitec=true;
+        }
         aa.notifyDataSetChanged();
     }
 
@@ -296,9 +356,11 @@ public class TestRunActivity extends Activity implements customButtonListener {
 
         // This button should only work if there were no failed tests so far
         if (testRun.currentStepUnitsFailed == 0) {
-            for (int i = 0; i < testRun.numberOfBays; i++) {
+            for (int i = 0; i < rack.numberOfBays; i++) {
                 //reset background colors
-                bayItems[i].stepStatus = "Passed";
+                if (testRun.bayItems[i].stepStatus.equals("Not Tested")) {
+                    testRun.bayItems[i].stepStatus = "Passed";
+                }
             }
         } else {
             // Highlight the failed tests
@@ -316,20 +378,24 @@ public class TestRunActivity extends Activity implements customButtonListener {
         // go back to the top of the list
         Boolean returnValue=false;
 
-        for (int i=0;i<testRun.numberOfBays;i++) {
+        for (int i=0;i<rack.numberOfBays;i++) {
             //If any unit has failed this step, it will be exempt from future steps.
-            if (bayItems[i].stepStatus=="Failed" || bayItems[i].stepStatus=="Failed previous step") {
+            if (testRun.bayItems[i].stepStatus.equals("Failed")) {
                 //It has failed, skip it for the rest of the run.
-                bayItems[i].stepStatus = "Failed previous step";
-            } else bayItems[i].stepStatus = "Not Tested";
+                testRun.bayItems[i].stepStatus="Failed previous step";
+                testRun.bayItems[i].isFailed=true;
+                testRun.bayItems[i].failStep=testRun.currentTestStep;
+                testRun.overallUnitsFailed++;
+            } else if (testRun.bayItems[i].stepStatus.equals("Passed")) {
+                testRun.bayItems[i].stepStatus = "Not Tested";
+            }
         }
 
+        testRun.currentStepUnitsFailed = 0;
+        testRun.currentStepUnitsPassed = 0;
+        testRun.currentStepUnitsTested = 0;
         // Update the step complete timestamp
-        TestStep oldTestStep = testSteps.get(testRun.currentTestStep-1);
-        oldTestStep.setEndTime();
-
-        //reset the counters
-        updateCounts();
+        testRun.testResult.setEndTime(testRun.currentTestStep-1);
 
         testRun.currentTestStep++;
 
@@ -339,7 +405,8 @@ public class TestRunActivity extends Activity implements customButtonListener {
             // End of this run, report results.
 
             //Update NVM to show the last test run was completed
-            editor.putInt(MainActivity.TAG_LAST_STEP_COMPLETE,-1);
+            editor.putBoolean(MainActivity.TAG_RESUME_AVAILABLE,false);
+            editor.putString(TAG_SAVED_TEST_RUN, "");
             editor.commit();
 
             //Write out test results in a new task
@@ -359,13 +426,8 @@ public class TestRunActivity extends Activity implements customButtonListener {
             // There is at least one more step left in this run
             returnValue=true;
 
-            //update NVM to save state and start on next step on restart/reboot
-            editor.putInt(MainActivity.TAG_LAST_STEP_COMPLETE,testRun.currentTestStep);
-            editor.commit();
-
             //Update the step begun timestamp
-            TestStep newTestStep = testSteps.get(testRun.currentTestStep-1);
-            newTestStep.setStartTime();
+            testRun.testResult.setStartTime(testRun.currentTestStep-1);
 
             //scroll back to the top of the list
             listView.smoothScrollToPosition(0);
@@ -384,11 +446,17 @@ public class TestRunActivity extends Activity implements customButtonListener {
         testRun.overallUnitsFailed=0;
 
         // update results totals
-        for (int i=0;i<testRun.numberOfBays;i++) {
+        for (int i=0;i<rack.numberOfBays;i++) {
             //count up the numbers of passed and failed units
-            if (bayItems[i].stepStatus=="Failed") testRun.currentStepUnitsFailed++;
-            if (bayItems[i].stepStatus=="Passed") testRun.currentStepUnitsPassed++;
-            if (bayItems[i].stepStatus=="Failed previous step") testRun.overallUnitsFailed++;
+            if (testRun.bayItems[i].stepStatus.equals("Failed")) {
+                testRun.currentStepUnitsFailed=testRun.currentStepUnitsFailed+1;
+            }
+            if (testRun.bayItems[i].stepStatus.equals("Passed")) {
+                testRun.currentStepUnitsPassed=testRun.currentStepUnitsPassed+1;
+            }
+            if (testRun.bayItems[i].stepStatus.equals("Failed previous step")) {
+                testRun.overallUnitsFailed=testRun.overallUnitsFailed+1;
+            }
         }
 
         testRun.currentStepUnitsTested = testRun.currentStepUnitsFailed+testRun.currentStepUnitsPassed;
@@ -398,7 +466,11 @@ public class TestRunActivity extends Activity implements customButtonListener {
         if ( testRun.currentStepUnitsTested >= (testRun.numberOfActiveBays - testRun.overallUnitsFailed) ) {
             showView=loadNextStep();
         }
-        if (showView) updateView();
+        // Only show the view and update saved state if we are not at the end of the run
+        if (showView) {
+            updateView();
+            saveTestRunState();
+        }
     }
 
     private void updateView(){
@@ -412,7 +484,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
         //Load the current step start time
         TextView currentStepStartTime = (TextView)findViewById(R.id.start_time);
         SimpleDateFormat format = new SimpleDateFormat("yyyy MM dd hh:mm:ss");
-        String dateToStr = format.format(testStep.getStartTime());
+        String dateToStr = format.format(testRun.testResult.getStartTime(testRun.currentTestStep-1));
         currentStepStartTime.setText(dateToStr);
 
         //Get the current progress info loaded
@@ -458,6 +530,26 @@ public class TestRunActivity extends Activity implements customButtonListener {
         newText=text.replaceAll("NEWLINE",newLine);
         stepInfo.setSingleLine(false);
         stepInfo.setText(newText);
+
+        //If any of the barcode fields are being edited, show the soft keyboard
+        Boolean showKeyboard=false;
+        for (int i = 0; i < testRun.bayItems.length; i++) {
+            if (testRun.bayItems[i].isEditScentair || testRun.bayItems[i].isEditMitec) {
+                showKeyboard = true;
+            }
+        }
+        if (showKeyboard) {
+            InputMethodManager im = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            //TODO Gonna need to fix this mess
+        }
+
+        // If the test step does not need a 'Pass All' button at the bottom, disable it here
+        if (testRun.currentTestStep==1) {
+            // Turn off the footer view
+            footerView.setVisibility(View.INVISIBLE);
+        } else {
+            footerView.setVisibility(View.VISIBLE);
+        }
 
         aa.notifyDataSetChanged();
     }
@@ -509,8 +601,56 @@ public class TestRunActivity extends Activity implements customButtonListener {
             Log.i("TestRunSensorReadouts", String.valueOf(sensorIndex) + " " + String.valueOf(sensorVal));
         }
         public void run() {
-            bayItems[sensorIndex].currentValue = sensorVal;
-            bayItems[sensorIndex].unitState = machineStates.getState(sensorVal);
+            testRun.bayItems[sensorIndex].currentValue = sensorVal;
+            testRun.bayItems[sensorIndex].unitState = machineStates.getState(sensorVal);
+            aa.notifyDataSetChanged();
+        }
+    }
+
+    private void saveTestRunState () {
+        // get test run state info translated to a string
+        testRun.currentBay=testRun.currentStepUnitsTested;
+        testRunSavedState = gson.toJson(testRun);
+
+        //update NVM to save state and start on next step on restart/reboot
+        editor.putBoolean(MainActivity.TAG_RESUME_AVAILABLE,true);
+        editor.putString(TAG_SAVED_TEST_RUN,testRunSavedState);
+        editor.commit();
+    }
+
+    @Override
+    public void onMitecBarCodeFocusChangeListener(int position, boolean touchFocusSelect) {
+        // Operator has touched a field, shift the edit and focus to that field and clear the others.
+        //clear the old edit field because the user has selected this field.
+        if (touchFocusSelect) {
+            for (int i = 0; i < testRun.bayItems.length; i++) {
+                testRun.bayItems[i].isEditScentair = false;
+                testRun.bayItems[i].isEditMitec = false;
+            }
+            // Clear the field for re-entry
+            testRun.bayItems[position].mitecBarcode = "";
+            testRun.bayItems[position].isEditMitec = true;
+            aa.notifyDataSetChanged();
+        }
+    }
+
+    @Override
+    public void onScentAirBarCodeFocusChangeListener(int position, boolean touchFocusSelect) {
+        //clear the old edit field because the user has selected this field.
+        if (touchFocusSelect) {
+            for (int i = 0; i < testRun.bayItems.length; i++) {
+                testRun.bayItems[i].isEditScentair = false;
+                testRun.bayItems[i].isEditMitec = false;
+            }
+
+            // Check to see if something else was entered.  If so, clear it
+            testRun.bayItems[position].scentairBarcode = "";
+            testRun.bayItems[position].isEditScentair = true;
+
+            aa.notifyDataSetChanged();
+            // Clear the field for re-entry
+            testRun.bayItems[position].mitecBarcode = "";
+            testRun.bayItems[position].isEditMitec = true;
             aa.notifyDataSetChanged();
         }
     }

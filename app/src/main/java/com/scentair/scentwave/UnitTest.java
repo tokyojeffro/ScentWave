@@ -3,37 +3,35 @@ package com.scentair.scentwave;
 import java.util.*;
 
 public class UnitTest {
-    public Integer rackNumber;
+    public Unit unit;
+    public Boolean passed;
     public Integer bayNumber;
-    public String mitecSerial;
-    public String scentairSerial;
-    public HashMap<String, Integer> currentReadings;
-    public HashMap<String, String> testResults;
+    public String fanMediumDisplayValue;
+    public Integer fanHighValue;
+    public Integer fanMedValue;
+    public Integer fanLowValue;
+    public String failCause;
+    public Integer failType;
+    public Date timeStamp;
 
-    public UnitTest(Integer rackNum, Integer bayNum){
-        this.rackNumber = rackNum;
+    public UnitTest(Unit unit,
+                    Boolean passed,
+                    Integer bayNum,
+                    String fanMediumDisplayValue,
+                    Integer fanHighValue,
+                    Integer fanMedValue,
+                    Integer fanLowValue,
+                    String failCause,
+                    Integer failType){
+        this.unit = unit;
+        this.passed=passed;
         this.bayNumber = bayNum;
-        this.mitecSerial = "";
-        this.scentairSerial = "";
-
-        this.currentReadings.put("Unplugged",0);
-        this.currentReadings.put("OffPlugged",0);
-        this.currentReadings.put("OnPluggedBLOff",0);
-        this.currentReadings.put("OnPluggedBLOn",0);
-        this.currentReadings.put("FanTurnOn",0);
-        this.currentReadings.put("FanLow",0);
-        this.currentReadings.put("FanLowtoMed",0);
-        this.currentReadings.put("FanMed",0);
-        this.currentReadings.put("FanHigh",0);
-        this.currentReadings.put("FanPowerSpike",0);
-        this.currentReadings.put("FanPowerError",0);
-
-        this.testResults.put("Step1", "Not tested");
-        this.testResults.put("Step2", "Not tested");
-        this.testResults.put("Step3", "Not tested");
-        this.testResults.put("Step4", "Not tested");
-        this.testResults.put("Step5", "Not tested");
-        this.testResults.put("Step6", "Not tested");
-        this.testResults.put("Step7", "Not tested");
+        this.fanMediumDisplayValue=fanMediumDisplayValue;
+        this.fanHighValue=fanHighValue;
+        this.fanMedValue=fanMedValue;
+        this.fanLowValue=fanLowValue;
+        this.failCause=failCause;
+        this.failType=failType;
+        this.timeStamp=new Date();
     }
 }
