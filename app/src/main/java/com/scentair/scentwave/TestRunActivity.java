@@ -17,6 +17,7 @@ import android.widget.TextView;
 
 import com.google.gson.Gson;
 import com.phidgets.InterfaceKitPhidget;
+import com.phidgets.Manager;
 import com.phidgets.Phidget;
 import com.phidgets.PhidgetException;
 import com.phidgets.event.AttachEvent;
@@ -36,9 +37,9 @@ public class TestRunActivity extends Activity implements customButtonListener {
 
     public static final String TAG_SAVED_TEST_RUN="SAVED_TEST_RUN";
 
-    private InterfaceKitPhidget ik;
     private String phidgetServerAddress;
     private MachineStates machineStates;
+    Manager phidgetManager;
 
     TestRun testRun;
     Rack rack;
@@ -134,44 +135,51 @@ public class TestRunActivity extends Activity implements customButtonListener {
         listView.setAdapter(aa);
 
         if (resume) listView.smoothScrollToPosition(testRun.currentBay);
+        try {
+            phidgetManager = new Manager();
+            phidgetManager.open(phidgetServerAddress,5001);
+        } catch (PhidgetException pe) {
+            pe.printStackTrace();
+        }
 
         // add the phidget interface stuff for the real time value.
-        try
-        {
-            ik = new InterfaceKitPhidget();
-            ik.addAttachListener(new AttachListener() {
-                public void attached(final AttachEvent ae) {
-                    AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), true);
-                    synchronized(handler)
-                    {
-                        runOnUiThread(handler);
-                        try {
-                            handler.wait();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+        try {
+            for (int i=0;i<rack.numberOfPhidgetsPerRack;i++) {
+                //rack.phidgets[i] = new InterfaceKitPhidget();
+
+
+                rack.phidgets[i].phidget.addAttachListener(new AttachListener() {
+                    public void attached(final AttachEvent ae) {
+                        AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), true);
+                        synchronized (handler) {
+                            runOnUiThread(handler);
+                            try {
+                                handler.wait();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
-                }
-            });
-            ik.addDetachListener(new DetachListener() {
-                public void detached(final DetachEvent ae) {
-                    AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), false);
-                    synchronized(handler)
-                    {
-                        runOnUiThread(handler);
-                        try {
-                            handler.wait();
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                });
+                rack.phidgets[i].phidget.addDetachListener(new DetachListener() {
+                    public void detached(final DetachEvent ae) {
+                        AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), false);
+                        synchronized (handler) {
+                            runOnUiThread(handler);
+                            try {
+                                handler.wait();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
-                }
-            });
-            ik.addSensorChangeListener(new SensorChangeListener() {
-                public void sensorChanged(SensorChangeEvent se) {
-                    runOnUiThread(new SensorChangeRunnable(se.getIndex(), se.getValue()));
-                }
-            });
+                });
+                final int finalI = i;
+                rack.phidgets[i].phidget.addSensorChangeListener(new SensorChangeListener() {
+                    public void sensorChanged(SensorChangeEvent se) {
+                        runOnUiThread(new SensorChangeRunnable(finalI, se.getIndex(), se.getValue()));
+                    }
+                });
 /*  Until we need it
             ik.addInputChangeListener(new InputChangeListener() {
                 public void inputChanged(InputChangeEvent ie) {
@@ -179,10 +187,10 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 }
             });
 */
-            ik.openAny(phidgetServerAddress, 5001);
-        }
-        catch (PhidgetException pe)
-        {
+                //ik.openAny(phidgetServerAddress, 5001);
+                rack.phidgets[i].phidget.open(rack.phidgets[i].phidgetSerialNumber, phidgetServerAddress, 5001);
+            }
+        } catch (PhidgetException pe) {
             pe.printStackTrace();
         }
         updateView();
@@ -438,6 +446,14 @@ public class TestRunActivity extends Activity implements customButtonListener {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        try {
+            for (int i = 0; i < rack.numberOfPhidgetsPerRack; i++) {
+                rack.phidgets[i].phidget.close();
+            }
+        }
+        catch (PhidgetException pe) {
+            pe.printStackTrace();
+        }
     }
 
     private void updateCounts(){
@@ -586,23 +602,23 @@ public class TestRunActivity extends Activity implements customButtonListener {
             synchronized(this)
             {
                 this.notify();
+                updateView();
             }
         }
     }
 
     class SensorChangeRunnable implements Runnable {
-        int sensorIndex, sensorVal;
-        public SensorChangeRunnable(int index, int val)
-        {
+        int phidgetNumber,sensorIndex, sensorVal;
+
+        public SensorChangeRunnable(int phidgetNumber, int index, int val) {
             this.sensorIndex = index;
             this.sensorVal = val;
-            //TODO need to add in the offset for the different phidgets for this rack
-
-            Log.i("TestRunSensorReadouts", String.valueOf(sensorIndex) + " " + String.valueOf(sensorVal));
+            this.phidgetNumber=phidgetNumber;
         }
         public void run() {
-            testRun.bayItems[sensorIndex].currentValue = sensorVal;
-            testRun.bayItems[sensorIndex].unitState = machineStates.getState(sensorVal);
+            // Put the value from the phidget into the
+            Integer bayValue = (phidgetNumber*8)+sensorIndex;
+            testRun.bayItems[bayValue].currentValue = sensorVal + rack.bays[bayValue].calibrationOffset;
             aa.notifyDataSetChanged();
         }
     }

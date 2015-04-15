@@ -102,7 +102,7 @@
                 android:layout_alignParentTop="true"
                 android:layout_toRightOf="@id/bay_range_labels"
                 android:gravity="center_vertical|center_horizontal" />
-            <TextView
+            <EditText
                 android:id="@+id/phidget_1"
                 android:text="12345"
                 android:layout_width="300dp"
@@ -115,7 +115,7 @@
                 android:gravity="center_vertical|center_horizontal"
                 android:layout_toRightOf="@id/bay_range_1"
                 android:layout_below="@id/phidget_labels"/>
-            <TextView
+            <EditText
                 android:id="@+id/phidget_2"
                 android:text="67890"
                 android:layout_width="300dp"
@@ -126,7 +126,7 @@
                 android:background="@android:color/white"
                 android:layout_toRightOf="@id/bay_range_2"
                 android:layout_below="@id/phidget_1"/>
-            <TextView
+            <EditText
                 android:id="@+id/phidget_3"
                 android:text="24680"
                 android:layout_width="300dp"

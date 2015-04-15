@@ -76,7 +76,7 @@ public class CalibrationBayArrayAdapter extends ArrayAdapter<Bay> {
             holder.toggleActiveButton.setBackgroundColor(Color.parseColor("#FF4444"));
 
             holder.bayStateField.setText("Bay is Active");
-            holder.bayStateField.setBackgroundColor(Color.parseColor("#44CC00"));
+            holder.bayStateField.setBackgroundColor(Color.LTGRAY);
 
         } else {
             // Bay is inactive due
@@ -84,18 +84,17 @@ public class CalibrationBayArrayAdapter extends ArrayAdapter<Bay> {
             holder.toggleActiveButton.setBackgroundColor(Color.parseColor("#44CC00"));
 
             holder.bayStateField.setText("Bay is Inactive");
-            holder.bayStateField.setBackgroundColor(Color.parseColor("#FF4444"));
+            holder.bayStateField.setBackgroundColor(Color.GRAY);
         }
 
         // Load the data from the array into the view
 
         holder.bayNumberField.setText(String.valueOf(bays[position].bayNumber));
 
-        // TODO add in the actual sensor readings and apply calibration first
-        holder.rawValueField.setText("10");
-        //holder.rawValueField.setText(String.valueOf(actual sensor value));
-        holder.calibratedValueField.setText(String.valueOf(bays[position].calibrationOffset));
-        //holder.rawValueField.setText(String.valueOf(actual sensor value + bays[position].calibrationOffset));
+        // Apply calibration.
+        holder.rawValueField.setText(bays[position].rawValue.toString());
+        Integer calibratedValue = bays[position].rawValue + bays[position].calibrationOffset;
+        holder.calibratedValueField.setText(calibratedValue.toString());
 
         holder.toggleActiveButton.setOnClickListener(new View.OnClickListener() {
             @Override

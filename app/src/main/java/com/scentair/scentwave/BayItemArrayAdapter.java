@@ -92,7 +92,11 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
         ViewHolder holder = (ViewHolder) rowView.getTag();
 
         // Check whether the bay is calibrated active or inactive
-        if ((!testRun.bayItems[position].isActive) || (testRun.bayItems[position].stepStatus.equals("Failed previous step")))
+        // Check whether the bay has failed a previous step
+        // and check whether the phidget is connected for this bay by checking the current value
+        if ((!testRun.bayItems[position].isActive) ||
+                (testRun.bayItems[position].stepStatus.equals("Failed previous step")) ||
+                (testRun.bayItems[position].currentValue<-40))
         {
             // Try to overlay a message that says 'Bay Inactive' and limit touch
             holder.bayInactive.setVisibility(View.VISIBLE);
@@ -107,8 +111,10 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
 
             if (!testRun.bayItems[position].isActive) {
                 text = "Bay " + visiblePosition + " is Inactive.  Change in calibration";
-            } else {
+            } else if (testRun.bayItems[position].stepStatus.equals("Failed previous step")) {
                 text = "Bay " + visiblePosition + ":Fail step:" + testRun.bayItems[position].failStep + ":"+ testRun.bayItems[position].failCause;
+            } else {
+                text = "Calibration Issue - no input - check Phidget";
             }
 
             holder.bayInactiveText.setBackgroundColor(Color.YELLOW);

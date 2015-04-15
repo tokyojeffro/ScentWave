@@ -4,17 +4,20 @@ public class Bay {
     public Boolean active;
     public Integer bayNumber;
     public Integer calibrationOffset;
+    public Integer rawValue;
 
     public Bay(Integer bayNumber) {
-        active = true;
+        this.active = true;
         this.bayNumber = bayNumber;
-        calibrationOffset = 0;
+        this.calibrationOffset = 0;
+        this.rawValue = 0;
     }
 
     public Bay (Integer bayNumber,Boolean status,Integer offset) {
-        active = status;
+        this.active = status;
         this.bayNumber = bayNumber;
-        calibrationOffset = offset;
+        this.calibrationOffset = offset;
+        this.rawValue = 0;
     }
 
     public Integer getCalibrationOffset(){

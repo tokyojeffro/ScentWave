@@ -9,7 +9,7 @@ public class BayItem{
     public String mitecBarcode;
     public String scentairBarcode;
     public String unitState;
-    public Integer currentValue;
+    public Integer currentValue=-50;
     public String stepStatus;
     public Boolean isFailed;
     public String failCause;
@@ -29,7 +29,7 @@ public class BayItem{
         this.bayNumber=bayNumber;
         this.mitecBarcode = "";
         this.scentairBarcode = "";
-        this.currentValue = 0;
+        this.currentValue = -50;
         this.stepStatus = "Not Tested";
         this.unitState = "Unplugged";
         this.failCause = "";

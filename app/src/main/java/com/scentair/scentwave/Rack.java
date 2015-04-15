@@ -1,34 +1,61 @@
 package com.scentair.scentwave;
 
 import android.content.SharedPreferences;
+import android.util.JsonWriter;
+import android.util.Log;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.phidgets.InterfaceKitPhidget;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpResponseException;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicHeader;
+import org.apache.http.protocol.HTTP;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOError;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+
 public class Rack {
     public Integer number;
-    public Integer[] phidgetSerialNumbers;
-     public Bay[] bays;
+    public Phidget[] phidgets;
+//    public Integer[] phidgetSerialNumbers;
+//    public InterfaceKitPhidget[] phidgets;
+    public Bay[] bays;
     public final Integer numberOfBays=24;
     public final Integer numberOfPhidgetsPerRack=numberOfBays/8;
 
+    private static final String TAG_RACK_NUMBER = "rack_number";
     private static final String TAG_BAY_STATUS = "bay_status";
     private static final String TAG_BAY_NUMBER = "bay_number";
     private static final String TAG_CALIBRATION_OFFSET = "calibration_offset";
-    private static final String TAG_PHIDGET_NUMBER = "phidget_number";
-    private static final String TAG_PHIDGET_SERIAL_NUMBER = "phidget_serial_number";
-
-    JSONArray json_operators = null;
+    private static final String TAG_PHIDGET_NUMBER = "phidgetId";
+    private static final String TAG_PHIDGET_SERIAL_NUMBER = "phidgetSerialNumber";
+    private static final String TAG_PHIDGET_ID = "id";
 
     public Rack (Integer number, String serverAddress) {
         this.number = number;
 
-        phidgetSerialNumbers = new Integer[numberOfPhidgetsPerRack];
+        JSONArray json_operators = null;
+
+        phidgets = new Phidget[numberOfPhidgetsPerRack];
+        for (int i=0;i<numberOfPhidgetsPerRack;i++) {
+            Phidget phidget = new Phidget();
+            phidgets[i]= phidget;
+        }
+
         bays = new Bay[numberOfBays];
 
         // Get the JSON for the assigned rack
-        String url = "http://" + serverAddress + "/dbtest.php/rack" + number.toString() + "bays";
+        String url = "http://" + serverAddress + "/dbtest.php/rackbays";
 
         JSONParser jParser = new JSONParser();
 
@@ -38,7 +65,7 @@ public class Rack {
 
         try {
             // looping through all operators
-            for (int i = 0; i < json_operators.length(); i++)
+            for (int i = 0; i < json_operators.length();i++)
             {
                 JSONObject q = json_operators.getJSONObject(i);
                 String tempStatus = q.getString(TAG_BAY_STATUS);
@@ -47,11 +74,14 @@ public class Rack {
 
                 Integer offset = q.getInt(TAG_CALIBRATION_OFFSET);
                 Integer bayNumber = q.getInt(TAG_BAY_NUMBER);
+                Integer rackNumber = q.getInt(TAG_RACK_NUMBER);
 
-                Bay newBay = new Bay(bayNumber,status,offset);
-
-                // Storing each json item in variables
-                bays[i] = newBay;
+                // Only save the info related to this bay from the table.
+                if (rackNumber==this.number) {
+                    Bay newBay = new Bay(bayNumber, status, offset);
+                    // Storing each json item in variables
+                    bays[bayNumber-1] = newBay;
+                }
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -60,7 +90,7 @@ public class Rack {
         }
 
         // Get the JSON for the assigned rack
-        url = "http://" + serverAddress + "/dbtest.php/rack" + number.toString() + "phidgets";
+        url = "http://" + serverAddress + "/dbtest.php/rackphidgets";
 
         jParser = new JSONParser();
 
@@ -74,8 +104,15 @@ public class Rack {
 
                 Integer phidgetNumber = q.getInt(TAG_PHIDGET_NUMBER);
                 Integer phidgetSerialNumber = q.getInt(TAG_PHIDGET_SERIAL_NUMBER);
+                Integer rackNumber = q.getInt(TAG_RACK_NUMBER);
+                Integer id = q.getInt(TAG_PHIDGET_ID);
 
-                phidgetSerialNumbers[phidgetNumber-1] = phidgetSerialNumber;
+                // Only save info related to this rack.
+                if (rackNumber==this.number) {
+                    phidgets[phidgetNumber-1].phidgetSerialNumber = phidgetSerialNumber;
+                    phidgets[phidgetNumber-1].id = id;
+                    phidgets[phidgetNumber-1].phidgetId = phidgetNumber;
+                }
             }
         } catch (JSONException e) {
             e.printStackTrace();
@@ -97,5 +134,37 @@ public class Rack {
 
     public Rack getRack() {
         return this;
+    }
+
+    public void updateCalibrationTables (Integer rackNumber, String serverAddress) {
+        InputStream inputStream = null;
+        DefaultHttpClient httpClient = new DefaultHttpClient();
+        String url = "http://" + serverAddress + "/dbtest.php/rackphidgets";
+
+        HttpPost httpPostReq = new HttpPost(url);
+
+        httpPostReq.setHeader("Accept", "application/json");
+        httpPostReq.setHeader("Content-type","application/json");
+
+        Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+
+        String jsonOutput=gson.toJson(this.phidgets);
+
+        StringEntity se;
+
+        try {
+            se = new StringEntity(jsonOutput);
+            se.setContentType("application/json;charset=UTF-8");
+            se.setContentEncoding(new BasicHeader(HTTP.CONTENT_TYPE, "application/json;charset=UTF-8"));
+            httpPostReq.setEntity(se);
+
+            HttpResponse httpResponse = httpClient.execute(httpPostReq);
+            inputStream = httpResponse.getEntity().getContent();
+            String text = inputStream.toString();
+            Log.i("Response received", text);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
