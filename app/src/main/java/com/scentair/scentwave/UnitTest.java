@@ -1,18 +1,24 @@
 package com.scentair.scentwave;
 
+import com.google.gson.annotations.Expose;
+
 import java.util.*;
 
 public class UnitTest {
+    // The Unit is not a part of the JSON construction because it must be handled separately
     public Unit unit;
-    public Boolean passed;
-    public Integer bayNumber;
-    public String fanMediumDisplayValue;
-    public Integer fanHighValue;
-    public Integer fanMedValue;
-    public Integer fanLowValue;
-    public String failCause;
-    public Integer failType;
-    public Date timeStamp;
+
+    // The rest of these are part of the JSON output
+    @Expose public Boolean passed;
+    @Expose public Integer bayNumber;
+    @Expose public String fanMediumDisplayValue;
+    @Expose public Integer fanHighValue;
+    @Expose public Integer fanMedValue;
+    @Expose public Integer fanLowValue;
+    @Expose public String failCause;
+    @Expose public Integer failType;
+    // This is not exposed because we never write the ID out
+    public Integer unitTestId;
 
     public UnitTest(Unit unit,
                     Boolean passed,
@@ -32,6 +38,5 @@ public class UnitTest {
         this.fanLowValue=fanLowValue;
         this.failCause=failCause;
         this.failType=failType;
-        this.timeStamp=new Date();
     }
 }

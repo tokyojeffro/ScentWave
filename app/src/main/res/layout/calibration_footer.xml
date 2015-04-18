@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/calibration_footer"
+    android:orientation="horizontal"
+    android:layout_width="fill_parent"
+    android:layout_height="300dp">
+    <Button
+        android:id="@+id/save_and_exit_button"
+        android:text="Save and Exit"
+        android:layout_width="fill_parent"
+        android:layout_height="150dp"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:gravity="center"
+        android:layout_margin="3dp"
+        android:textSize="25dp"
+        android:background="#99CC00"
+        />
+</LinearLayout>

@@ -1,18 +1,23 @@
 package com.scentair.scentwave;
 
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.app.Activity;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import com.phidgets.InterfaceKitPhidget;
+import com.phidgets.Manager;
 import com.phidgets.Phidget;
 import com.phidgets.PhidgetException;
 import com.phidgets.event.AttachEvent;
@@ -22,6 +27,9 @@ import com.phidgets.event.DetachListener;
 import com.phidgets.event.SensorChangeEvent;
 import com.phidgets.event.SensorChangeListener;
 import com.scentair.scentwave.CalibrationBayArrayAdapter.customCalibrationButtonListener;
+
+import java.util.ArrayList;
+import java.util.Vector;
 
 public class CalibrationActivity extends Activity implements customCalibrationButtonListener {
 
@@ -35,6 +43,11 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
     SharedPreferences sharedPreferences;
     SharedPreferences.Editor editor;
     public Integer currentRack;
+    private View footerView;
+    private ArrayList<Integer> attachedPhidgets;
+    private Manager phidgetManager;
+    private Vector<InterfaceKitPhidget> phidgets;
+    private CharSequence[] phidgetList;
 
     /**
      * Called when the activity is first created.
@@ -62,13 +75,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
         toggleRackButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //TODO Delete this stuff later
-                EditText editText = (EditText) findViewById(R.id.phidget_1);
-                String tempString = editText.getText().toString();
-                Integer tempInteger = Integer.valueOf(tempString);
-                rack.phidgets[0].phidgetSerialNumber = tempInteger;
-
-                new saveDBValues().execute("http://this is a test");
 
                 if (currentRack == 1) {
                     currentRack = 2;
@@ -83,36 +89,47 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
             }
         });
 
-        EditText phidget1Field = (EditText) findViewById(R.id.phidget_1);
+
+
+        TextView phidget1Field = (TextView) findViewById(R.id.phidget_1);
         phidget1Field.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                EditText text = (EditText) v;
-                rack.phidgets[0].phidgetSerialNumber = Integer.getInteger(text.getText().toString());
+                updatePhidget1(v);
             }
         });
 
-        EditText phidget2Field = (EditText) findViewById(R.id.phidget_2);
+        TextView phidget2Field = (TextView) findViewById(R.id.phidget_2);
         phidget2Field.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                EditText text = (EditText) v;
-                rack.phidgets[1].phidgetSerialNumber = Integer.getInteger(text.getText().toString());
+                updatePhidget2(v);
             }
         });
 
-        EditText phidget3Field = (EditText) findViewById(R.id.phidget_3);
+        TextView phidget3Field = (TextView) findViewById(R.id.phidget_3);
         phidget3Field.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                EditText text = (EditText) v;
-                rack.phidgets[2].phidgetSerialNumber = Integer.getInteger(text.getText().toString());
+                updatePhidget3(v);
             }
         });
 
         //Need to build out the bay list here.
         //The bay list is a set of fragments attached to a special adapter
         listView = (ListView) findViewById(R.id.calibrate_list_view);
+
+
+        footerView =  ((LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.calibration_footer, null, false);
+        listView.addFooterView(footerView);
+
+        Button saveAndExitButton = (Button) findViewById(R.id.save_and_exit_button);
+        saveAndExitButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                saveAndExit();
+            }
+        });
 
         aa = new CalibrationBayArrayAdapter(this, rack.getBays());
 
@@ -122,8 +139,18 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
 
         // add the phidget interface stuff for the real time value.
         try {
+            attachedPhidgets = new ArrayList<Integer>();
+            try {
+                phidgetManager = new Manager();
+                phidgetManager.open(phidgetServerAddress,5001);
+
+                phidgets =phidgetManager.getPhidgets();
+
+            } catch (PhidgetException pe) {
+                pe.printStackTrace();
+            }
+
             for (int i=0;i<rack.numberOfPhidgetsPerRack;i++) {
-//                rack.phidgets[i].phidget = new InterfaceKitPhidget();
 
                 rack.phidgets[i].phidget.addAttachListener(new AttachListener() {
                     public void attached(final AttachEvent ae) {
@@ -206,8 +233,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
         catch (PhidgetException pe) {
             pe.printStackTrace();
         }
-
-
     }
 
     private void updateView() {
@@ -247,7 +272,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
         } catch (PhidgetException pe) {
             pe.printStackTrace();
         }
-
         // Set up phidget serial number 3
         phidgetSerialView = (TextView) findViewById(R.id.phidget_3);
         text = rack.phidgets[2].phidgetSerialNumber.toString();
@@ -262,8 +286,118 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
         } catch (PhidgetException pe) {
             pe.printStackTrace();
         }
-
         aa.notifyDataSetChanged();
+    }
+
+    private void saveAndExit() {
+        new saveDBValues().execute("http://this is a test");
+        finish();
+    }
+
+    private void updatePhidget1(View v) {
+        LayoutInflater inflater= getLayoutInflater();
+        View dialogView = (View) inflater.inflate(R.layout.phidget_list,null);
+
+        final CharSequence[] phidgetList = new CharSequence[phidgets.size()];
+        try {
+            for (int i = 0; i < phidgets.size(); i++) {
+                Phidget newPhidget = phidgets.get(i);
+                Integer serialNumber = newPhidget.getSerialNumber();
+                phidgetList[i] = serialNumber.toString();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(CalibrationActivity.this);
+        builder.setTitle("Available Phidgets")
+                .setItems(phidgetList, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        //Load the proper failure reason into the failure field
+                        String newPhidgetNumberString=phidgetList[which].toString();
+                        Integer newPhidgetNumberInteger = Integer.parseInt(newPhidgetNumberString);
+                        rack.phidgets[0].phidgetSerialNumber=newPhidgetNumberInteger;
+                        aa.notifyDataSetChanged();
+                    }
+                })
+                .setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    @Override
+                    public void onDismiss(DialogInterface dialog) {
+                        updateView();
+                    }
+                })
+                .setView(dialogView)
+                .show();
+    }
+    private void updatePhidget2(View v) {
+        LayoutInflater inflater= getLayoutInflater();
+        View dialogView = (View) inflater.inflate(R.layout.phidget_list,null);
+
+        final CharSequence[] phidgetList = new CharSequence[phidgets.size()];
+        try {
+            for (int i = 0; i < phidgets.size(); i++) {
+                Phidget newPhidget = phidgets.get(i);
+                Integer serialNumber = newPhidget.getSerialNumber();
+                phidgetList[i] = serialNumber.toString();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(CalibrationActivity.this);
+        builder.setTitle("Available Phidgets")
+                .setItems(phidgetList, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        //Load the proper failure reason into the failure field
+                        String newPhidgetNumberString=phidgetList[which].toString();
+                        Integer newPhidgetNumberInteger = Integer.parseInt(newPhidgetNumberString);
+                        rack.phidgets[1].phidgetSerialNumber=newPhidgetNumberInteger;
+                        aa.notifyDataSetChanged();
+                    }
+                })
+                .setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    @Override
+                    public void onDismiss(DialogInterface dialog) {
+                        updateView();
+                    }
+                })
+                .setView(dialogView)
+                .show();
+    }
+    private void updatePhidget3(View v) {
+        LayoutInflater inflater= getLayoutInflater();
+        View dialogView = (View) inflater.inflate(R.layout.phidget_list,null);
+
+        final CharSequence[] phidgetList = new CharSequence[phidgets.size()];
+        try {
+            for (int i = 0; i < phidgets.size(); i++) {
+                Phidget newPhidget = phidgets.get(i);
+                Integer serialNumber = newPhidget.getSerialNumber();
+                phidgetList[i] = serialNumber.toString();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(CalibrationActivity.this);
+        builder.setTitle("Available Phidgets")
+                .setItems(phidgetList, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        //Load the proper failure reason into the failure field
+                        String newPhidgetNumberString=phidgetList[which].toString();
+                        Integer newPhidgetNumberInteger = Integer.parseInt(newPhidgetNumberString);
+                        rack.phidgets[2].phidgetSerialNumber=newPhidgetNumberInteger;
+                        aa.notifyDataSetChanged();
+                    }
+                })
+                .setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    @Override
+                    public void onDismiss(DialogInterface dialog) {
+                        updateView();
+                    }
+                })
+                .setView(dialogView)
+                .show();
     }
 
     class AttachDetachRunnable implements Runnable {

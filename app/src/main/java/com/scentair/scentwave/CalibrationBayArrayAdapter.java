@@ -70,21 +70,18 @@ public class CalibrationBayArrayAdapter extends ArrayAdapter<Bay> {
 
         ViewHolder holder = (ViewHolder) rowView.getTag();
 
+        holder.toggleActiveButton = (Button) rowView.findViewById(R.id.toggle_active_state);
+        holder.toggleActiveButton.setBackgroundColor(Color.YELLOW);
+
         if (bays[position].active) {
             // Bay is active, set background color and text accordingly
-            holder.toggleActiveButton.setText("Set Inactive");
-            holder.toggleActiveButton.setBackgroundColor(Color.parseColor("#FF4444"));
-
             holder.bayStateField.setText("Bay is Active");
-            holder.bayStateField.setBackgroundColor(Color.LTGRAY);
+            holder.bayStateField.setBackgroundColor(Color.GREEN);
 
         } else {
             // Bay is inactive due
-            holder.toggleActiveButton.setText("Set Active");
-            holder.toggleActiveButton.setBackgroundColor(Color.parseColor("#44CC00"));
-
             holder.bayStateField.setText("Bay is Inactive");
-            holder.bayStateField.setBackgroundColor(Color.GRAY);
+            holder.bayStateField.setBackgroundColor(Color.RED);
         }
 
         // Load the data from the array into the view

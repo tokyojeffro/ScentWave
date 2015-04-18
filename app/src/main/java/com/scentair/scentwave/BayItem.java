@@ -21,6 +21,7 @@ public class BayItem{
     public Integer lowValue = 0;
     public Integer medValue = 0;
     public Integer highValue = 0;
+    public String fanMedDisplayValue;
     public Boolean cycleTestComplete=false;
     public Date lastOffTime;
 
@@ -44,6 +45,12 @@ public class BayItem{
         this.highValue=0;
         this.lastOffTime = new Date();
         this.cycleTestComplete=false;
+        this.fanMedDisplayValue="";
+    }
+
+    //Constructor used to generate test results
+    public BayItem() {
+
     }
 
     public String isPassReady(Integer testNumber) {

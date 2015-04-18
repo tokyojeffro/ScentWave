@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.app.Activity;
 import android.util.Log;
@@ -39,7 +40,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
 
     private String phidgetServerAddress;
     private MachineStates machineStates;
-    Manager phidgetManager;
+
 
     TestRun testRun;
     Rack rack;
@@ -135,19 +136,11 @@ public class TestRunActivity extends Activity implements customButtonListener {
         listView.setAdapter(aa);
 
         if (resume) listView.smoothScrollToPosition(testRun.currentBay);
-        try {
-            phidgetManager = new Manager();
-            phidgetManager.open(phidgetServerAddress,5001);
-        } catch (PhidgetException pe) {
-            pe.printStackTrace();
-        }
+
 
         // add the phidget interface stuff for the real time value.
         try {
             for (int i=0;i<rack.numberOfPhidgetsPerRack;i++) {
-                //rack.phidgets[i] = new InterfaceKitPhidget();
-
-
                 rack.phidgets[i].phidget.addAttachListener(new AttachListener() {
                     public void attached(final AttachEvent ae) {
                         AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), true);
@@ -273,9 +266,14 @@ public class TestRunActivity extends Activity implements customButtonListener {
             testRun.bayItems[position].isEditMitec=false;
             testRun.bayItems[position].isEditScentair=false;
             // Set the focus to the next active bay
-            testRun.bayItems[position].isEditMitec=true;
+            if (nextBay<rack.numberOfBays) {
+                testRun.bayItems[nextBay].isEditMitec = true;
+                listView.smoothScrollToPosition(nextBay);
+            } else {
+                listView.smoothScrollToPosition(position+2);
+            }
         }
-        listView.smoothScrollToPosition(position+2);
+
         updateCounts();
     }
 
@@ -300,12 +298,14 @@ public class TestRunActivity extends Activity implements customButtonListener {
 
             } else nextBay = testRun.getNextActiveBay(position);
 
-            testRun.bayItems[nextBay].isEditMitec = true;
-
             if (nextBay<rack.numberOfBays) {
                 // if there are bays left to scroll to, move on down
-                listView.setSelection(nextBay);
+                testRun.bayItems[nextBay].isEditMitec = true;
+                listView.smoothScrollToPosition(nextBay);
             }
+
+            updateCounts();
+
         } else if (candidateText.contains("REV")) {
             // This is a valid Mitec barcode.  Put it where it belongs and keep focus here.
             testRun.bayItems[position].mitecBarcode=candidateText;
@@ -343,7 +343,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 if (nextBay<rack.numberOfBays) {
                     // if there are bays left to scroll to, move on down
                     testRun.bayItems[nextBay].isEditMitec = true;
-                    listView.setSelection(nextBay);
+                    listView.smoothScrollToPosition(nextBay);
                 }
             }
         } else if (candidateText.endsWith(".00")) {
@@ -407,6 +407,13 @@ public class TestRunActivity extends Activity implements customButtonListener {
 
         testRun.currentTestStep++;
 
+        //TODO REMOVE THIS
+        //Calculate results
+        testRun.calculateResults(rack);
+        // Spin off the async task to save the results back to the database
+        new saveTestResults().execute("This is a test");
+        //TODO REMOVE THIS
+
         // Check if that is the end of the steps and end of this run
         if (testRun.currentTestStep>testRun.maxTestSteps)
         {
@@ -417,15 +424,11 @@ public class TestRunActivity extends Activity implements customButtonListener {
             editor.putString(TAG_SAVED_TEST_RUN, "");
             editor.commit();
 
-            //Write out test results in a new task
+            //Calculate results
+            testRun.calculateResults(rack);
 
-            // Includes adding all the new serial numbers to the serial number tables
-                //mitec
-                //scentair
-            // Includes adding the relevant test data to the tables
-            //TODO
-
-            //includes saving the results
+            // Spin off the async task to save the results back to the database
+            new saveTestResults().execute("This is a test");
 
             //close this activity
             finish();
@@ -435,7 +438,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
             returnValue=true;
 
             //Update the step begun timestamp
-            testRun.testResult.setStartTime(testRun.currentTestStep-1);
+            testRun.testResult.setStartTime(testRun.currentTestStep - 1);
 
             //scroll back to the top of the list
             listView.smoothScrollToPosition(0);
@@ -463,6 +466,13 @@ public class TestRunActivity extends Activity implements customButtonListener {
 
         // update results totals
         for (int i=0;i<rack.numberOfBays;i++) {
+
+            String returnValue = testRun.bayItems[i].isPassReady(testRun.currentTestStep);
+
+            if (returnValue.equals("Passed")) {
+                testRun.bayItems[i].stepStatus = "Passed";
+            }
+
             //count up the numbers of passed and failed units
             if (testRun.bayItems[i].stepStatus.equals("Failed")) {
                 testRun.currentStepUnitsFailed=testRun.currentStepUnitsFailed+1;
@@ -570,6 +580,30 @@ public class TestRunActivity extends Activity implements customButtonListener {
         aa.notifyDataSetChanged();
     }
 
+    private void saveTestRunState () {
+        // get test run state info translated to a string
+        testRun.currentBay=testRun.currentStepUnitsTested;
+        testRunSavedState = gson.toJson(testRun);
+
+        //update NVM to save state and start on next step on restart/reboot
+        editor.putBoolean(MainActivity.TAG_RESUME_AVAILABLE,true);
+        editor.putString(TAG_SAVED_TEST_RUN,testRunSavedState);
+        editor.commit();
+    }
+
+    private class saveTestResults extends AsyncTask<String, Void, String> {
+        @Override
+        protected String doInBackground(String... urls) {
+            testRun.saveTestResults(currentRack,MainActivity.dbServerAddress);
+
+            return urls[0];
+        }
+        @Override
+        protected void onPostExecute(String result) {
+            //do nothing for now
+        }
+    }
+
     class AttachDetachRunnable implements Runnable {
         Phidget phidget;
         boolean attach;
@@ -621,17 +655,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
             testRun.bayItems[bayValue].currentValue = sensorVal + rack.bays[bayValue].calibrationOffset;
             aa.notifyDataSetChanged();
         }
-    }
-
-    private void saveTestRunState () {
-        // get test run state info translated to a string
-        testRun.currentBay=testRun.currentStepUnitsTested;
-        testRunSavedState = gson.toJson(testRun);
-
-        //update NVM to save state and start on next step on restart/reboot
-        editor.putBoolean(MainActivity.TAG_RESUME_AVAILABLE,true);
-        editor.putString(TAG_SAVED_TEST_RUN,testRunSavedState);
-        editor.commit();
     }
 
     @Override
