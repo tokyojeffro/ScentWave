@@ -1,15 +1,9 @@
 package com.scentair.scentwave;
 
-import android.content.SharedPreferences;
-import android.util.JsonWriter;
 import android.util.Log;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.phidgets.InterfaceKitPhidget;
-
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -18,11 +12,7 @@ import org.apache.http.protocol.HTTP;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.io.IOError;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 
 public class Rack {
     public Integer number;
@@ -43,31 +33,25 @@ public class Rack {
     public Rack (Integer number, String serverAddress) {
         this.number = number;
 
-        JSONArray json_operators = null;
+        JSONArray json_operators;
 
         phidgets = new Phidget[numberOfPhidgetsPerRack];
         for (int i=0;i<numberOfPhidgetsPerRack;i++) {
             Phidget phidget = new Phidget(this.number);
             phidgets[i]= phidget;
         }
-
         bays = new Bay[numberOfBays];
 
         // Get the JSON for the assigned rack
         String url = "http://" + serverAddress + "/dbtest.php/rackbays";
-
         JSONParser jParser = new JSONParser();
-
         json_operators = jParser.getJSONFromUrl(url);
-
-        Boolean status;
 
         try {
             // looping through all operators
             for (int i = 0; i < json_operators.length();i++)
             {
                 JSONObject q = json_operators.getJSONObject(i);
-
 
                 Boolean bayStatus = false;
                 Integer tempInt = q.getInt(TAG_BAY_STATUS);
@@ -79,7 +63,7 @@ public class Rack {
                 Integer id = q.getInt(TAG_PHIDGET_ID);
 
                 // Only save the info related to this bay from the table.
-                if (rackNumber==this.number) {
+                if (rackNumber.equals(this.number)) {
                     Bay newBay = new Bay(this.number, bayNumber, bayStatus, offset, id);
                     // Storing each json item in variables
                     bays[bayNumber-1] = newBay;
@@ -87,8 +71,6 @@ public class Rack {
             }
         } catch (JSONException e) {
             e.printStackTrace();
-        }
-        finally {
         }
 
         // Get the JSON for the assigned rack
@@ -110,7 +92,7 @@ public class Rack {
                 Integer id = q.getInt(TAG_PHIDGET_ID);
 
                 // Only save info related to this rack.
-                if (rackNumber==this.number) {
+                if (rackNumber.equals(this.number)) {
                     phidgets[phidgetNumber-1].phidgetSerialNumber = phidgetSerialNumber;
                     phidgets[phidgetNumber-1].id = id;
                     phidgets[phidgetNumber-1].phidgetId = phidgetNumber;
@@ -119,8 +101,6 @@ public class Rack {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        finally {
-        }
     }
     public Bay[] getBays() {
         return bays;
@@ -128,7 +108,8 @@ public class Rack {
 
     public Integer getActiveBays() {
         Integer activeBays = 0;
-        for (int i = 0; i < bays.length; i++) {
+
+        for (int i=0; i<bays.length; i++) {
             if (bays[i].active) activeBays++;
         }
         return activeBays;
@@ -138,7 +119,7 @@ public class Rack {
         return this;
     }
 
-    public void updateCalibrationTables (Integer rackNumber, String serverAddress) {
+    public void updateCalibrationTables (String serverAddress) {
         InputStream inputStream = null;
         DefaultHttpClient httpClient = new DefaultHttpClient();
         String url = "http://" + serverAddress + "/dbtest.php/rackphidgets";

@@ -4,8 +4,6 @@ import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
-import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -14,14 +12,9 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HTTP;
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.Array;
-import java.security.Timestamp;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class TestRun{
@@ -92,8 +85,7 @@ public class TestRun{
             // Find the next active bay
             if (bayItems[i].isActive) {
                 // If there are any active bays left
-                BayItem bayItem = new BayItem();
-                bayItem = bayItems[i];
+                BayItem bayItem = bayItems[i];
 
                 // Create a new Unit with the barcode info
                 Unit newUnit = new Unit (
@@ -121,12 +113,14 @@ public class TestRun{
         testResult.numberOfUnitsFailed = overallUnitsFailed;
         testResult.numberOfUnitsPassed = numberOfActiveBays - overallUnitsFailed;
 
-        //TODO CLEAN THIS UP
-        for (int i=1;i<maxTestSteps;i++) {
-            testResult.setStartTime(i);
-            testResult.setEndTime(i);
+        if (overallUnitsFailed.equals(numberOfActiveBays) && !currentTestStep.equals(maxTestSteps)) {
+            // Special case where all units have failed in this run
+            // Set up the data structure for export by filling in the necessary blanks
+            for (int i=currentTestStep+1;i<maxTestSteps;i++) {
+                testResult.setStartTime(i);
+                testResult.setEndTime(i);
+            }
         }
-        //TODO CLEAN THIS UP
 
         testResult.step1Start = testResult.stepStartTimes[0];
         testResult.step2Start = testResult.stepStartTimes[1];
@@ -140,8 +134,7 @@ public class TestRun{
         testResult.step5Stop = testResult.stepEndTimes[4];
     }
 
-    public void saveTestResults (Integer rackNumber, String serverAddress) {
-        InputStream inputStream = null;
+    public void saveTestResults (String serverAddress, Integer numberOfBays) {
         DefaultHttpClient httpClient = new DefaultHttpClient();
 
         // First step, save the new units in their table
@@ -326,9 +319,9 @@ public class TestRun{
 
         // For the last step, write out the linking table records from the data we have parsed and stored
         // First, build the link record objects
-        ArrayList<DatabaseLinkRecord> linkRecords = new ArrayList<DatabaseLinkRecord>();
+        ArrayList<DatabaseLinkRecord> linkRecords = new ArrayList<>();
 
-        for (int i=0;i<MainActivity.rack.numberOfBays;i++) {
+        for (int i=0;i<numberOfBays;i++) {
             // Find the next active bay
             if (bayItems[i].isActive) {
                 // If there are any active bays left

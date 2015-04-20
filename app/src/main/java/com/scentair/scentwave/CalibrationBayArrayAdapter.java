@@ -1,12 +1,10 @@
 package com.scentair.scentwave;
 
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -55,23 +53,28 @@ public class CalibrationBayArrayAdapter extends ArrayAdapter<Bay> {
 
             LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             rowView = inflater.inflate(R.layout.calibration_row, parent, false);
-            viewHolder = new ViewHolder();
+
             viewHolder.calibrationIncrementButton = (Button) rowView.findViewById(R.id.increase_calibration);
+            viewHolder.calibrationIncrementButton.setTextColor(Color.BLACK);
             viewHolder.calibrationDecrementButton = (Button) rowView.findViewById(R.id.decrease_calibration);
+            viewHolder.calibrationDecrementButton.setTextColor(Color.BLACK);
+
             viewHolder.toggleActiveButton = (Button) rowView.findViewById(R.id.toggle_active_state);
+            viewHolder.toggleActiveButton.setTextColor(Color.YELLOW);
 
             viewHolder.bayNumberField = (TextView) rowView.findViewById(R.id.calibration_bay_number);
+            viewHolder.bayNumberField.setTextColor(Color.BLACK);
             viewHolder.rawValueField = (TextView) rowView.findViewById(R.id.raw_value);
+            viewHolder.rawValueField.setTextColor(Color.BLACK);
             viewHolder.calibratedValueField = (TextView) rowView.findViewById(R.id.calibrated_value);
+            viewHolder.calibratedValueField.setTextColor(Color.BLACK);
             viewHolder.bayStateField = (TextView) rowView.findViewById((R.id.bay_active_state));
+            viewHolder.bayStateField.setTextColor(Color.BLACK);
 
             rowView.setTag(viewHolder);
         } // end of initializing a new view
 
         ViewHolder holder = (ViewHolder) rowView.getTag();
-
-        holder.toggleActiveButton = (Button) rowView.findViewById(R.id.toggle_active_state);
-        holder.toggleActiveButton.setBackgroundColor(Color.YELLOW);
 
         if (bays[position].active) {
             // Bay is active, set background color and text accordingly
@@ -134,7 +137,6 @@ public class CalibrationBayArrayAdapter extends ArrayAdapter<Bay> {
                 }
             }
         });
-
         return rowView;
     }
 }

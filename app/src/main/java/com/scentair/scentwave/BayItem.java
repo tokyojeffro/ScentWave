@@ -1,5 +1,7 @@
 package com.scentair.scentwave;
 
+import org.apache.http.entity.StringEntity;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -24,6 +26,7 @@ public class BayItem{
     public String fanMedDisplayValue;
     public Boolean cycleTestComplete=false;
     public Date lastOffTime;
+    private String oldUnitState;
 
     //Constructor used for beginning a test run
     public BayItem (Integer bayNumber, boolean activeStatus) {
@@ -33,6 +36,7 @@ public class BayItem{
         this.currentValue = -50;
         this.stepStatus = "Not Tested";
         this.unitState = "Unplugged";
+        this.oldUnitState = "Unplugged";
         this.failCause = "";
         this.failStep = 0;
         this.failCauseIndex=0;
@@ -49,8 +53,7 @@ public class BayItem{
     }
 
     //Constructor used to generate test results
-    public BayItem() {
-
+    public BayItem( ) {
     }
 
     public String isPassReady(Integer testNumber) {
@@ -106,8 +109,72 @@ public class BayItem{
                 }
                 break;
         }
-
         return returnValue;
+    }
+
+    public void updateValue(Integer newValue) {
+        currentValue = newValue;
+        oldUnitState = unitState;
+
+        if (isActive) {
+            // Only process this if the bay is active in calibration
+            unitState = TestRunActivity.machineStates.getState(newValue);
+
+            // This switch saves off the representative values for the fan at each state
+            switch (unitState) {
+                case "Unplugged":
+                    break;
+                case "Low":
+                    lowValue = newValue;
+                    break;
+                case "Medium":
+                    medValue = newValue;
+                    break;
+                case "High":
+                    highValue = newValue;
+                    break;
+            }
+
+            if (oldUnitState.equals("Low") && (
+                    unitState.equals("BackLight Off") ||
+                            unitState.equals("BackLight On") ||
+                            unitState.equals("Off") ||
+                            unitState.equals("FanTurnOn") )) {
+                // We have toggled from Low to Off (in some form)
+                // Save the timestamp info for future reference
+                if (lastOffTime != null) {
+                    // Check the difference here
+                    Date checkTime = new Date();
+                    SimpleDateFormat sdf = new SimpleDateFormat("KK:mm");
+
+                    long difference = checkTime.getTime() - lastOffTime.getTime();
+
+                    Integer days = (int) (difference / (1000 * 60 * 60 * 24));
+                    Integer hours = (int) ((difference - (1000 * 60 * 60 * 24 * days)) / (1000 * 60 * 60));
+                    Integer min = (int) (difference - (1000 * 60 * 60 * 24 * days) - (1000 * 60 * 60 * hours)) / (1000 * 60);
+                    Integer seconds = (int) (difference/1000);
+
+                    // in any case, reset the date here so as not to smudge it with breakpoints
+                    lastOffTime = new Date();
+
+                    switch (seconds) {
+                        case 119:
+                        case 120:
+                        case 121:
+                            // We have a winner for fan cycle test timing.
+                            cycleTestComplete = true;
+                            break;
+                        default:
+                            // No winner
+                            cycleTestComplete = false;
+                            break;
+                    }
+                } else {
+                    // Set the reference time
+                    lastOffTime = new Date();
+                }
+            }
+        }
     }
 
     @Override

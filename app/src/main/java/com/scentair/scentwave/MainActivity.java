@@ -1,17 +1,12 @@
 package com.scentair.scentwave;
 
-import com.scentair.scentwave.R;
-
 import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v7.app.ActionBarActivity;
 import android.view.*;
 import android.content.*;
 import android.widget.Button;
 import android.widget.TextView;
-
-import java.util.ArrayList;
 
 public class MainActivity extends Activity {
 
@@ -19,7 +14,6 @@ public class MainActivity extends Activity {
     public static Operators operators;
     public static TestSteps testSteps;
     public static Failures failures;
-    public static Rack rack;
     private Boolean resumeRun = false;
 
     // These are the tags for the data stored in NVM as preferences
@@ -39,7 +33,6 @@ public class MainActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-
 
         sharedPreferences=getSharedPreferences(TAG_MYPREFS, Context.MODE_PRIVATE);
         phidgetServerAddress = sharedPreferences.getString(TAG_PHIDGET_SERVER_ADDRESS,"192.168.1.22");
@@ -97,8 +90,6 @@ public class MainActivity extends Activity {
             operators = new Operators(dbServerAddress);
             testSteps = new TestSteps(dbServerAddress);
             failures = new Failures(dbServerAddress);
-            Integer currentRack=sharedPreferences.getInt(TAG_RACK_NUMBER,1);
-            rack = new Rack(currentRack,dbServerAddress);
 
             return urls[0];
         }

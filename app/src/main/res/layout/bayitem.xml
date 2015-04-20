@@ -20,6 +20,7 @@
                 android:layout_height="50dp"
                 android:textSize="30dp"
                 android:text="Bay #x is Inactive."
+                android:textColor="@android:color/black"
                 android:gravity="center"
                 android:layout_alignParentTop="true"
                 />
@@ -28,6 +29,7 @@
                 android:layout_width="fill_parent"
                 android:layout_height="50dp"
                 android:text="Use calibration to set active."
+                android:textColor="@android:color/black"
                 android:textSize="30dp"
                 android:backgroundTint="@android:color/darker_gray"
                 android:gravity="center"
@@ -53,6 +55,7 @@
                     android:layout_height="294dp"
                     android:gravity="center"
                     android:background="@android:color/white"
+                    android:textColor="@android:color/black"
                     android:textSize="40dp"
                     android:layout_marginLeft="3dp"
                     android:layout_marginRight="3dp"
@@ -73,6 +76,7 @@
                     android:layout_width="fill_parent"
                     android:layout_height="39dp"
                     android:background="@android:color/white"
+                    android:textColor="@android:color/black"
                     android:textSize="25dp"
                     android:layout_alignParentTop="true" />
                 <EditText
@@ -80,6 +84,7 @@
                     android:layout_width="fill_parent"
                     android:layout_height="59dp"
                     android:background="@android:color/white"
+                    android:textColor="@android:color/black"
                     android:textSize="25dp"
                     android:gravity="center_vertical|center_horizontal"
                     android:inputType="textNoSuggestions|text"
@@ -91,6 +96,7 @@
                     android:layout_width="fill_parent"
                     android:layout_height="39dp"
                     android:background="@android:color/white"
+                    android:textColor="@android:color/black"
                     android:textSize="25dp"
                     android:layout_below="@id/mitecbarcode"/>
                 <EditText
@@ -98,6 +104,7 @@
                     android:layout_width="fill_parent"
                     android:layout_height="59dp"
                     android:background="@android:color/white"
+                    android:textColor="@android:color/black"
                     android:textSize="25dp"
                     android:gravity="center_vertical|center_horizontal"
                     android:inputType="text|textNoSuggestions"
@@ -108,6 +115,7 @@
                     android:layout_width="fill_parent"
                     android:layout_height="39dp"
                     android:background="@android:color/white"
+                    android:textColor="@android:color/black"
                     android:textSize="25dp"
                     android:layout_below="@id/scentairbarcode"/>
                 <TextView
@@ -116,6 +124,7 @@
                     android:layout_width="110dp"
                     android:layout_height="59dp"
                     android:background="@android:color/white"
+                    android:textColor="@android:color/black"
                     android:textSize="20dp"
                     android:gravity="center_vertical"
                     android:layout_below="@id/unitstatelabel" />
@@ -125,6 +134,7 @@
                     android:layout_width="86dp"
                     android:layout_height="59dp"
                     android:background="@android:color/white"
+                    android:textColor="@android:color/black"
                     android:textSize="30dp"
                     android:gravity="center_horizontal|center_vertical"
                     android:numeric="integer"
@@ -146,6 +156,7 @@
                     android:gravity="center"
                     android:textSize="20dp"
                     android:background="#99CC00"
+                    android:textColor="@android:color/black"
                     android:layout_marginLeft="3dp"
                     android:layout_marginRight="3dp"
                     android:layout_alignParentTop="true"
@@ -165,6 +176,7 @@
                     android:gravity="center"
                     android:textSize="25dp"
                     android:background="#FF4444"
+                    android:textColor="@android:color/black"
                     android:layout_marginLeft="3dp"
                     android:layout_marginRight="3dp"
                     android:layout_alignParentTop="true"

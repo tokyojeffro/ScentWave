@@ -8,25 +8,20 @@ import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.app.Activity;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
-import com.phidgets.InterfaceKitPhidget;
-import com.phidgets.Manager;
+
 import com.phidgets.Phidget;
 import com.phidgets.PhidgetException;
 import com.phidgets.event.AttachEvent;
 import com.phidgets.event.AttachListener;
 import com.phidgets.event.DetachEvent;
 import com.phidgets.event.DetachListener;
-import com.phidgets.event.InputChangeEvent;
-import com.phidgets.event.InputChangeListener;
 import com.phidgets.event.SensorChangeEvent;
 import com.phidgets.event.SensorChangeListener;
 import com.scentair.scentwave.BayItemArrayAdapter.customButtonListener;
@@ -39,26 +34,26 @@ public class TestRunActivity extends Activity implements customButtonListener {
     public static final String TAG_SAVED_TEST_RUN="SAVED_TEST_RUN";
 
     private String phidgetServerAddress;
-    private MachineStates machineStates;
 
-
-    TestRun testRun;
-    Rack rack;
-    ArrayList<TestStep> testSteps = MainActivity.testSteps.getTestSteps();
-    ListView listView;
-    BayItemArrayAdapter aa;
-    Context context;
-    ArrayList<Failure> failureList;
-    SharedPreferences sharedPreferences;
-    SharedPreferences.Editor editor;
-    public Integer currentRack;
-    public String currentOperator;
+    private TestRun testRun;
+    private Rack rack;
+    private ArrayList<TestStep> testSteps = MainActivity.testSteps.getTestSteps();
+    private ListView listView;
+    private BayItemArrayAdapter aa;
+    private Context context;
+    private ArrayList<Failure> failureList;
+    private SharedPreferences sharedPreferences;
+    private SharedPreferences.Editor editor;
+    private Integer currentRack;
+    private String currentOperator;
     private boolean highlightFailed = false;
     private View footerView;
+    private Boolean resume = false;
+    static public MachineStates machineStates;
 
     // These are used to save the current state of the test run to prefs
     private String testRunSavedState;
-    Gson gson;
+    private Gson gson;
 
     /** Called when the activity is first created. */
     @Override
@@ -73,7 +68,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
 
         // Check to see if we are supposed to resume a paused/aborted run
         Bundle extras = getIntent().getExtras();
-        Boolean resume=false;
         if (extras!=null) {
             resume=extras.getBoolean(MainActivity.TAG_RESUME_AVAILABLE);
         }
@@ -85,34 +79,15 @@ public class TestRunActivity extends Activity implements customButtonListener {
         //String dbAddress = sharedPreferences.getString(MainActivity.TAG_DATABASE_SERVER_ADDRESS,"");
         phidgetServerAddress = sharedPreferences.getString(MainActivity.TAG_PHIDGET_SERVER_ADDRESS,"192.168.1.22");
 
-        failureList = MainActivity.failures.getFailures();
-        rack = MainActivity.rack.getRack();
-
-        //Finally, set up the machine states mapping
         machineStates = new MachineStates();
+
+        failureList = MainActivity.failures.getFailures();
+//        rack = MainActivity.rack.getRack();
+        // This will start an async process to load the current rack info from the database
+        new loadDBValues().execute("http://this string argument does nothing");
 
         //Initialize Gson object;
         gson = new Gson();
-
-        testRun = new TestRun();
-
-        if (resume) {
-            // Get the saved test run from prefs to start on from preferences
-            testRunSavedState = sharedPreferences.getString(TAG_SAVED_TEST_RUN,"");
-
-            testRun = gson.fromJson(testRunSavedState,TestRun.class);
-        }
-        else {
-            //Initialize this test run
-            testRun = new TestRun(currentOperator, MainActivity.rack,testSteps.size());
-            // Make sure we read the test steps from the proper data structure
-
-
-            // Reset resume status and clear saved test run
-            editor.putBoolean(MainActivity.TAG_RESUME_AVAILABLE, false);
-            editor.putString(TAG_SAVED_TEST_RUN,"");
-            editor.commit();
-        }
 
         //Need to build out the bay list here.
         //The bay list is a set of fragments attached to a special adapter
@@ -129,64 +104,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 passAll();
             }
         });
-
-        aa= new BayItemArrayAdapter(this, testRun);
-        aa.setCustomButtonListener(TestRunActivity.this);
-
-        listView.setAdapter(aa);
-
-        if (resume) listView.smoothScrollToPosition(testRun.currentBay);
-
-
-        // add the phidget interface stuff for the real time value.
-        try {
-            for (int i=0;i<rack.numberOfPhidgetsPerRack;i++) {
-                rack.phidgets[i].phidget.addAttachListener(new AttachListener() {
-                    public void attached(final AttachEvent ae) {
-                        AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), true);
-                        synchronized (handler) {
-                            runOnUiThread(handler);
-                            try {
-                                handler.wait();
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                });
-                rack.phidgets[i].phidget.addDetachListener(new DetachListener() {
-                    public void detached(final DetachEvent ae) {
-                        AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), false);
-                        synchronized (handler) {
-                            runOnUiThread(handler);
-                            try {
-                                handler.wait();
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                });
-                final int finalI = i;
-                rack.phidgets[i].phidget.addSensorChangeListener(new SensorChangeListener() {
-                    public void sensorChanged(SensorChangeEvent se) {
-                        runOnUiThread(new SensorChangeRunnable(finalI, se.getIndex(), se.getValue()));
-                    }
-                });
-/*  Until we need it
-            ik.addInputChangeListener(new InputChangeListener() {
-                public void inputChanged(InputChangeEvent ie) {
-                    runOnUiThread(new InputChangeRunnable(ie.getIndex(), ie.getState()));
-                }
-            });
-*/
-                //ik.openAny(phidgetServerAddress, 5001);
-                rack.phidgets[i].phidget.open(rack.phidgets[i].phidgetSerialNumber, phidgetServerAddress, 5001);
-            }
-        } catch (PhidgetException pe) {
-            pe.printStackTrace();
-        }
-        updateView();
     }
 
     @Override
@@ -237,13 +154,11 @@ public class TestRunActivity extends Activity implements customButtonListener {
         testRun.bayItems[position].stepStatus = "Failed";
         testRun.bayItems[position].failStep = testRun.currentTestStep;
 
-
         final int bayPosition = position;
 
         LayoutInflater inflater= getLayoutInflater();
         View dialogView = (View) inflater.inflate(R.layout.failureitem,null);
 
-        //TODO make this list prettier by using an adapter and a custom layout.
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Failure Reason")
                 .setItems(failureStrings, new DialogInterface.OnClickListener() {
@@ -273,7 +188,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 listView.smoothScrollToPosition(position+2);
             }
         }
-
         updateCounts();
     }
 
@@ -387,16 +301,19 @@ public class TestRunActivity extends Activity implements customButtonListener {
         Boolean returnValue=false;
 
         for (int i=0;i<rack.numberOfBays;i++) {
-            //If any unit has failed this step, it will be exempt from future steps.
-            if (testRun.bayItems[i].stepStatus.equals("Failed")) {
-                //It has failed, skip it for the rest of the run.
-                testRun.bayItems[i].stepStatus="Failed previous step";
-                testRun.bayItems[i].isFailed=true;
-                testRun.bayItems[i].failStep=testRun.currentTestStep;
-                testRun.overallUnitsFailed++;
-            } else if (testRun.bayItems[i].stepStatus.equals("Passed")) {
-                testRun.bayItems[i].stepStatus = "Not Tested";
-            }
+            // Only check active bays
+            if (testRun.bayItems[i].isActive) {
+                //If any unit has failed this step, it will be exempt from future steps.
+                if (testRun.bayItems[i].stepStatus.equals("Failed")) {
+                    //It has failed, skip it for the rest of the run.
+                    testRun.bayItems[i].stepStatus = "Failed previous step";
+                    testRun.bayItems[i].isFailed = true;
+                    testRun.bayItems[i].failStep = testRun.currentTestStep;
+                    testRun.overallUnitsFailed++;
+                } else if (testRun.bayItems[i].stepStatus.equals("Passed")) {
+                    testRun.bayItems[i].stepStatus = "Not Tested";
+                }
+            } else testRun.bayItems[i].stepStatus = "Inactive";
         }
 
         testRun.currentStepUnitsFailed = 0;
@@ -409,15 +326,16 @@ public class TestRunActivity extends Activity implements customButtonListener {
 
         //TODO REMOVE THIS
         //Calculate results
-        testRun.calculateResults(rack);
+        //testRun.calculateResults(rack);
         // Spin off the async task to save the results back to the database
-        new saveTestResults().execute("This is a test");
+        //new saveTestResults().execute("This is a test");
         //TODO REMOVE THIS
 
         // Check if that is the end of the steps and end of this run
         if (testRun.currentTestStep>testRun.maxTestSteps)
         {
             // End of this run, report results.
+            // TODO launch new activity to review and post results
 
             //Update NVM to show the last test run was completed
             editor.putBoolean(MainActivity.TAG_RESUME_AVAILABLE,false);
@@ -457,6 +375,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
         catch (PhidgetException pe) {
             pe.printStackTrace();
         }
+        rack = null;
     }
 
     private void updateCounts(){
@@ -466,30 +385,43 @@ public class TestRunActivity extends Activity implements customButtonListener {
 
         // update results totals
         for (int i=0;i<rack.numberOfBays;i++) {
+            // Only need to consider active bays
+            if (rack.bays[i].active) {
+                String returnValue = testRun.bayItems[i].isPassReady(testRun.currentTestStep);
 
-            String returnValue = testRun.bayItems[i].isPassReady(testRun.currentTestStep);
+                if (returnValue.equals("Passed")) {
+                    testRun.bayItems[i].stepStatus = "Passed";
+                }
 
-            if (returnValue.equals("Passed")) {
-                testRun.bayItems[i].stepStatus = "Passed";
-            }
-
-            //count up the numbers of passed and failed units
-            if (testRun.bayItems[i].stepStatus.equals("Failed")) {
-                testRun.currentStepUnitsFailed=testRun.currentStepUnitsFailed+1;
-            }
-            if (testRun.bayItems[i].stepStatus.equals("Passed")) {
-                testRun.currentStepUnitsPassed=testRun.currentStepUnitsPassed+1;
-            }
-            if (testRun.bayItems[i].stepStatus.equals("Failed previous step")) {
-                testRun.overallUnitsFailed=testRun.overallUnitsFailed+1;
+                //count up the numbers of passed and failed units
+                if (testRun.bayItems[i].stepStatus.equals("Failed")) {
+                    testRun.currentStepUnitsFailed = testRun.currentStepUnitsFailed + 1;
+                }
+                if (testRun.bayItems[i].stepStatus.equals("Passed")) {
+                    testRun.currentStepUnitsPassed = testRun.currentStepUnitsPassed + 1;
+                }
+                if (testRun.bayItems[i].stepStatus.equals("Failed previous step")) {
+                    testRun.overallUnitsFailed = testRun.overallUnitsFailed + 1;
+                }
             }
         }
 
         testRun.currentStepUnitsTested = testRun.currentStepUnitsFailed+testRun.currentStepUnitsPassed;
-
         Boolean showView=true;
 
-        if ( testRun.currentStepUnitsTested >= (testRun.numberOfActiveBays - testRun.overallUnitsFailed) ) {
+        if (testRun.overallUnitsFailed>=testRun.numberOfActiveBays) {
+            // This is a special case where all units have failed
+            // End the test run here, there is no more to say
+            // do not load the next step
+            showView=false;
+            //TODO add in the routine to finish out the counts for all failed and move to the next screen
+            //Calculate results
+            testRun.calculateResults(rack);
+            // Spin off the async task to save the results back to the database
+            // TODO remove the database write and add it to the new activity
+            new saveTestResults().execute("This is a test");
+        } else if ( testRun.currentStepUnitsTested >= (testRun.numberOfActiveBays - testRun.overallUnitsFailed) ) {
+            // There should be at least one unit that is still eligible to pass the run
             showView=loadNextStep();
         }
         // Only show the view and update saved state if we are not at the end of the run
@@ -500,84 +432,73 @@ public class TestRunActivity extends Activity implements customButtonListener {
     }
 
     private void updateView(){
-        TestStep testStep = testSteps.get(testRun.currentTestStep-1);
+        if (testRun!=null) {
+            TestStep testStep = testSteps.get(testRun.currentTestStep - 1);
 
-        //Get the header info loaded from the data structure
-        TextView currentStep = (TextView)findViewById(R.id.teststepnumber);
-        String text= "Step " + testRun.currentTestStep.toString() + " of " + testRun.maxTestSteps.toString();
-        currentStep.setText(text);
+            //Get the header info loaded from the data structure
+            TextView currentStep = (TextView) findViewById(R.id.teststepnumber);
+            String text = "Step " + testRun.currentTestStep.toString() + " of " + testRun.maxTestSteps.toString();
+            currentStep.setText(text);
 
-        //Load the current step start time
-        TextView currentStepStartTime = (TextView)findViewById(R.id.start_time);
-        SimpleDateFormat format = new SimpleDateFormat("yyyy MM dd hh:mm:ss");
-        String dateToStr = format.format(testRun.testResult.getStartTime(testRun.currentTestStep-1));
-        currentStepStartTime.setText(dateToStr);
+            //Load the current step start time
+            TextView currentStepStartTime = (TextView) findViewById(R.id.start_time);
+            SimpleDateFormat format = new SimpleDateFormat("yyyy MM dd hh:mm:ss");
+            String dateToStr = format.format(testRun.testResult.getStartTime(testRun.currentTestStep - 1));
+            currentStepStartTime.setText(dateToStr);
 
-        //Get the current progress info loaded
-        TextView currentProgress = (TextView) findViewById(R.id.test_step_progress);
-        Integer baysRemaining = testRun.numberOfActiveBays - testRun.overallUnitsFailed;
-        text="Tested " + testRun.currentStepUnitsTested.toString() + "/" + baysRemaining.toString();
-        currentProgress.setText(text);
+            //Get the current progress info loaded
+            TextView currentProgress = (TextView) findViewById(R.id.test_step_progress);
+            Integer baysRemaining = testRun.numberOfActiveBays - testRun.overallUnitsFailed;
+            text = "Tested " + testRun.currentStepUnitsTested.toString() + "/" + baysRemaining.toString();
+            currentProgress.setText(text);
 
-        TextView activeBays = (TextView) findViewById(R.id.active_bays);
-        text= testRun.numberOfActiveBays.toString();
-        activeBays.setText(text);
+            TextView activeBays = (TextView) findViewById(R.id.active_bays);
+            text = testRun.numberOfActiveBays.toString();
+            activeBays.setText(text);
 
-        TextView skippedBaysView = (TextView) findViewById(R.id.skipped_bays);
-        Integer skippedBays = testRun.overallUnitsFailed;
-        text= skippedBays.toString();
-        skippedBaysView.setText(text);
+            TextView skippedBaysView = (TextView) findViewById(R.id.skipped_bays);
+            Integer skippedBays = testRun.overallUnitsFailed;
+            text = skippedBays.toString();
+            skippedBaysView.setText(text);
 
-        TextView passedView = (TextView) findViewById(R.id.number_passed);
-        text= testRun.currentStepUnitsPassed.toString();
-        passedView.setText(text);
+            TextView passedView = (TextView) findViewById(R.id.number_passed);
+            text = testRun.currentStepUnitsPassed.toString();
+            passedView.setText(text);
 
-        TextView failedView = (TextView) findViewById(R.id.number_failed);
-        text= testRun.currentStepUnitsFailed.toString();
-        failedView.setText(text);
-        if (highlightFailed){
-            failedView.setBackgroundColor(Color.YELLOW);
-            highlightFailed=false;
-        } else {
-            failedView.setBackgroundColor(Color.WHITE);
-        }
-
-        //Get the verify list loaded
-        TextView verifyText = (TextView) findViewById(R.id.teststepverifylist);
-        text = testStep.expectedResults;
-        String newLine = System.getProperty("line.separator");
-        String newText=text.replaceAll("NEWLINE",newLine);
-        verifyText.setSingleLine(false);
-        verifyText.setText(newText);
-
-        //Get the test step information from the Test Steps list
-        TextView stepInfo = (TextView) findViewById(R.id.teststepinstruction);
-        text = testStep.testSteps;
-        newText=text.replaceAll("NEWLINE",newLine);
-        stepInfo.setSingleLine(false);
-        stepInfo.setText(newText);
-
-        //If any of the barcode fields are being edited, show the soft keyboard
-        Boolean showKeyboard=false;
-        for (int i = 0; i < testRun.bayItems.length; i++) {
-            if (testRun.bayItems[i].isEditScentair || testRun.bayItems[i].isEditMitec) {
-                showKeyboard = true;
+            TextView failedView = (TextView) findViewById(R.id.number_failed);
+            text = testRun.currentStepUnitsFailed.toString();
+            failedView.setText(text);
+            if (highlightFailed) {
+                failedView.setBackgroundColor(Color.YELLOW);
+                highlightFailed = false;
+            } else {
+                failedView.setBackgroundColor(Color.WHITE);
             }
-        }
-        if (showKeyboard) {
-            InputMethodManager im = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-            //TODO Gonna need to fix this mess
-        }
 
-        // If the test step does not need a 'Pass All' button at the bottom, disable it here
-        if (testRun.currentTestStep==1) {
-            // Turn off the footer view
-            footerView.setVisibility(View.INVISIBLE);
-        } else {
-            footerView.setVisibility(View.VISIBLE);
-        }
+            //Get the verify list loaded
+            TextView verifyText = (TextView) findViewById(R.id.teststepverifylist);
+            text = testStep.expectedResults;
+            String newLine = System.getProperty("line.separator");
+            String newText = text.replaceAll("NEWLINE", newLine);
+            verifyText.setSingleLine(false);
+            verifyText.setText(newText);
 
-        aa.notifyDataSetChanged();
+            //Get the test step information from the Test Steps list
+            TextView stepInfo = (TextView) findViewById(R.id.teststepinstruction);
+            text = testStep.testSteps;
+            newText = text.replaceAll("NEWLINE", newLine);
+            stepInfo.setSingleLine(false);
+            stepInfo.setText(newText);
+
+            // If the test step does not need a 'Pass All' button at the bottom, disable it here
+            if (testRun.currentTestStep == 1) {
+                // Turn off the footer view
+                footerView.setVisibility(View.INVISIBLE);
+            } else {
+                footerView.setVisibility(View.VISIBLE);
+            }
+            aa.notifyDataSetChanged();
+        }
     }
 
     private void saveTestRunState () {
@@ -594,7 +515,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
     private class saveTestResults extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... urls) {
-            testRun.saveTestResults(currentRack,MainActivity.dbServerAddress);
+            testRun.saveTestResults(MainActivity.dbServerAddress,rack.numberOfBays);
 
             return urls[0];
         }
@@ -652,7 +573,8 @@ public class TestRunActivity extends Activity implements customButtonListener {
         public void run() {
             // Put the value from the phidget into the
             Integer bayValue = (phidgetNumber*8)+sensorIndex;
-            testRun.bayItems[bayValue].currentValue = sensorVal + rack.bays[bayValue].calibrationOffset;
+            Integer updatedValue = sensorVal + rack.bays[bayValue].calibrationOffset;
+            testRun.bayItems[bayValue].updateValue(updatedValue);
             aa.notifyDataSetChanged();
         }
     }
@@ -691,6 +613,101 @@ public class TestRunActivity extends Activity implements customButtonListener {
             testRun.bayItems[position].mitecBarcode = "";
             testRun.bayItems[position].isEditMitec = true;
             aa.notifyDataSetChanged();
+        }
+    }
+
+    private class loadDBValues extends AsyncTask<String, Void, String> {
+        @Override
+        protected String doInBackground(String... urls) {
+            Integer currentRack=sharedPreferences.getInt(MainActivity.TAG_RACK_NUMBER,1);
+            rack = new Rack(currentRack,MainActivity.dbServerAddress);
+
+            return urls[0];
+        }
+        @Override
+        protected void onPostExecute(String result) {
+            // Continue setup after we have loaded the rack info from the DB.
+            testRun = new TestRun();
+
+            if (resume) {
+                // Get the saved test run from prefs to start on from preferences
+                testRunSavedState = sharedPreferences.getString(TAG_SAVED_TEST_RUN,"");
+
+                testRun = gson.fromJson(testRunSavedState,TestRun.class);
+            }
+            else {
+                //Initialize this test run
+                testRun = new TestRun(currentOperator, rack,testSteps.size());
+                // Make sure we read the test steps from the proper data structure
+
+                // Reset resume status and clear saved test run
+                editor.putBoolean(MainActivity.TAG_RESUME_AVAILABLE, false);
+                editor.putString(TAG_SAVED_TEST_RUN,"");
+                editor.commit();
+            }
+
+            aa= new BayItemArrayAdapter(context, testRun);
+            aa.setCustomButtonListener(TestRunActivity.this);
+
+            listView.setAdapter(aa);
+
+            if (resume) listView.smoothScrollToPosition(testRun.currentBay);
+
+            // add the phidget interface stuff for the real time value.
+            try {
+                for (int i=0;i<rack.numberOfPhidgetsPerRack;i++) {
+                    // This should lower the data rate to the minimum value
+                    // and lower the threshold to provide new change events
+                    //for (int j=0;j<7;j++) {
+                    //    rack.phidgets[i].phidget.setDataRate(j,100);
+                    //    rack.phidgets[i].phidget.setSensorChangeTrigger(j,15);
+                    //}
+                    rack.phidgets[i].phidget.addAttachListener(new AttachListener() {
+                        public void attached(final AttachEvent ae) {
+                            AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), true);
+                            synchronized (handler) {
+                                runOnUiThread(handler);
+                                try {
+                                    handler.wait();
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    });
+                    rack.phidgets[i].phidget.addDetachListener(new DetachListener() {
+                        public void detached(final DetachEvent ae) {
+                            AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), false);
+                            synchronized (handler) {
+                                runOnUiThread(handler);
+                                try {
+                                    handler.wait();
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    });
+                    final int finalI = i;
+                    rack.phidgets[i].phidget.addSensorChangeListener(new SensorChangeListener() {
+                        public void sensorChanged(SensorChangeEvent se) {
+                            runOnUiThread(new SensorChangeRunnable(finalI, se.getIndex(), se.getValue()));
+                        }
+                    });
+/*  Until we need it
+            ik.addInputChangeListener(new InputChangeListener() {
+                public void inputChanged(InputChangeEvent ie) {
+                    runOnUiThread(new InputChangeRunnable(ie.getIndex(), ie.getState()));
+                }
+            });
+*/
+                    //ik.openAny(phidgetServerAddress, 5001);
+                    rack.phidgets[i].phidget.open(rack.phidgets[i].phidgetSerialNumber, phidgetServerAddress, 5001);
+                }
+            } catch (PhidgetException pe) {
+                pe.printStackTrace();
+            }
+            updateView();
         }
     }
 

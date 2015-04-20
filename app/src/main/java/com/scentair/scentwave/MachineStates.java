@@ -19,6 +19,17 @@ public class MachineStates{
         stateMap = new HashMap<Integer, String>();
 
         StateRange initRange= new StateRange();
+        // Recalibrate range
+        initRange.min=-9999;
+        initRange.max=-1;
+        initRange.state="Recalibrate";
+
+        for (int i=initRange.min;i<=initRange.max;i++) {
+            stateMap.put(i,initRange.state);
+        }
+
+
+
         // Unplugged range
         initRange.min=0;
         initRange.max=9;

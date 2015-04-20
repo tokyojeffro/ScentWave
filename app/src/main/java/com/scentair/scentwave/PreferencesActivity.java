@@ -65,4 +65,10 @@ public class PreferencesActivity extends Activity {
         text = (TextView) findViewById(R.id.phidget_server_address);
         text.setText(phidgetAddress);
     }
+
+    @Override
+    public void onDestroy()
+    {
+        super.onDestroy();
+    }
 }
