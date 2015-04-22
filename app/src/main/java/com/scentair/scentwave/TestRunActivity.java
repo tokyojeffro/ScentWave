@@ -3,6 +3,7 @@ package com.scentair.scentwave;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.AsyncTask;
@@ -13,9 +14,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
-
 import com.google.gson.Gson;
-
 import com.phidgets.Phidget;
 import com.phidgets.PhidgetException;
 import com.phidgets.event.AttachEvent;
@@ -27,6 +26,7 @@ import com.phidgets.event.SensorChangeListener;
 import com.scentair.scentwave.BayItemArrayAdapter.customButtonListener;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Locale;
 
 
 public class TestRunActivity extends Activity implements customButtonListener {
@@ -34,7 +34,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
     public static final String TAG_SAVED_TEST_RUN="SAVED_TEST_RUN";
 
     private String phidgetServerAddress;
-
     private TestRun testRun;
     private Rack rack;
     private ArrayList<TestStep> testSteps = MainActivity.testSteps.getTestSteps();
@@ -44,12 +43,13 @@ public class TestRunActivity extends Activity implements customButtonListener {
     private ArrayList<Failure> failureList;
     private SharedPreferences sharedPreferences;
     private SharedPreferences.Editor editor;
-    private Integer currentRack;
     private String currentOperator;
     private boolean highlightFailed = false;
     private View footerView;
     private Boolean resume = false;
     static public MachineStates machineStates;
+    private Boolean showCompleteStepButton = false;
+    private Button completeStepButton;
 
     // These are used to save the current state of the test run to prefs
     private String testRunSavedState;
@@ -74,9 +74,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
 
         // Need to make sure we pull out the calibration info before starting the test run
         // Pull the associated rack number from NVM
-        currentRack = sharedPreferences.getInt(MainActivity.TAG_RACK_NUMBER,1);
         currentOperator = sharedPreferences.getString(MainActivity.TAG_OPERATOR_NAME,"");
-        //String dbAddress = sharedPreferences.getString(MainActivity.TAG_DATABASE_SERVER_ADDRESS,"");
         phidgetServerAddress = sharedPreferences.getString(MainActivity.TAG_PHIDGET_SERVER_ADDRESS,"192.168.1.22");
 
         machineStates = new MachineStates();
@@ -88,6 +86,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
 
         //Initialize Gson object;
         gson = new Gson();
+        showCompleteStepButton=false;
 
         //Need to build out the bay list here.
         //The bay list is a set of fragments attached to a special adapter
@@ -97,11 +96,11 @@ public class TestRunActivity extends Activity implements customButtonListener {
         footerView =  ((LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.baylistfooter, null, false);
         listView.addFooterView(footerView);
 
-        Button passAllButton = (Button) findViewById(R.id.pass_all_button);
-        passAllButton.setOnClickListener(new View.OnClickListener() {
+        completeStepButton = (Button) findViewById(R.id.complete_step_button);
+        completeStepButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                passAll();
+                completeTestStep();
             }
         });
     }
@@ -157,7 +156,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
         final int bayPosition = position;
 
         LayoutInflater inflater= getLayoutInflater();
-        View dialogView = (View) inflater.inflate(R.layout.failureitem,null);
+        View dialogView = inflater.inflate(R.layout.failureitem,null);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Failure Reason")
@@ -195,7 +194,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
     public void onScentAirBarCodeClickListener(int position, String candidateText) {
         // Scentair barcode has been entered, need to scroll to the next row
         // skip bays that are inactive
-        Integer nextBay = 0;
+        Integer nextBay;
         testRun.bayItems[position].isEditScentair=false;
 
         // First, check to see if the barcode is a valid scentair barcode
@@ -217,9 +216,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 testRun.bayItems[nextBay].isEditMitec = true;
                 listView.smoothScrollToPosition(nextBay);
             }
-
             updateCounts();
-
         } else if (candidateText.contains("REV")) {
             // This is a valid Mitec barcode.  Put it where it belongs and keep focus here.
             testRun.bayItems[position].mitecBarcode=candidateText;
@@ -237,7 +234,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
         // validate it and enter it if is good.  then move to scentair field
         // need to move focus and cursor to scentair barcode
 
-        Integer nextBay = 0;
+        Integer nextBay;
         testRun.bayItems[position].isEditMitec=false;
 
         // First, check to see if the barcode is a valid scentair barcode
@@ -271,27 +268,40 @@ public class TestRunActivity extends Activity implements customButtonListener {
         aa.notifyDataSetChanged();
     }
 
+    private void completeTestStep () {
+        // This is the only way to finish this step and move to the next step
+        // This button is only active if all active bays have been passed or failed.
+        Boolean moveToNextStep = true;
+        Boolean showView = false;
 
-    private void passAll () {
-        // The operator has scrolled to the end of the bay list and pressed pass all.
-        // Update the data to be all 'pass' (do not flag any fails here)
-
-        // This button should only work if there were no failed tests so far
-        if (testRun.currentStepUnitsFailed == 0) {
+        if (testRun.overallUnitsFailed>=testRun.numberOfActiveBays) {
+            // This is a special case where all units have failed
+            // End the test run here, there is no more to say
+            // do not load the next step
+            moveToNextStep=false;
+            postTestResults();
+        } else if ( testRun.currentStepUnitsTested >= testRun.numberOfActiveBays) {
+            // There should be at least one unit that is still eligible to pass the run
+            // Turn on the Complete Step button.
+            moveToNextStep=true;
+        } else {
             for (int i = 0; i < rack.numberOfBays; i++) {
-                //reset background colors
-                if (testRun.bayItems[i].stepStatus.equals("Not Tested")) {
-                    testRun.bayItems[i].stepStatus = "Passed";
+                if (testRun.bayItems[i].isActive) {
+                    // Only check active bays
+                    if (testRun.bayItems[i].stepStatus.equals("Not Tested")) {
+                        moveToNextStep = false;
+                    }
                 }
             }
-        } else {
-            // Highlight the failed tests
-            highlightFailed=true;
         }
-        updateCounts();
+
+        if (moveToNextStep) {
+            showView=loadNextStep();
+        }
+        if (showView) updateView();
     }
 
-    private Boolean loadNextStep() {
+    protected Boolean loadNextStep() {
         // This is the code to load the next test step and reset the variables for a new run
         // through the bay list
         // Here we need to reset the background colors
@@ -315,38 +325,31 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 }
             } else testRun.bayItems[i].stepStatus = "Inactive";
         }
-
+        //reset counters per step
         testRun.currentStepUnitsFailed = 0;
         testRun.currentStepUnitsPassed = 0;
         testRun.currentStepUnitsTested = 0;
+
+        // Turn off complete step button
+        showCompleteStepButton=false;
+
         // Update the step complete timestamp
         testRun.testResult.setEndTime(testRun.currentTestStep-1);
 
+        // go to next step
         testRun.currentTestStep++;
-
-        //TODO REMOVE THIS
-        //Calculate results
-        //testRun.calculateResults(rack);
-        // Spin off the async task to save the results back to the database
-        //new saveTestResults().execute("This is a test");
-        //TODO REMOVE THIS
 
         // Check if that is the end of the steps and end of this run
         if (testRun.currentTestStep>testRun.maxTestSteps)
         {
             // End of this run, report results.
-            // TODO launch new activity to review and post results
 
             //Update NVM to show the last test run was completed
             editor.putBoolean(MainActivity.TAG_RESUME_AVAILABLE,false);
             editor.putString(TAG_SAVED_TEST_RUN, "");
             editor.commit();
 
-            //Calculate results
-            testRun.calculateResults(rack);
-
-            // Spin off the async task to save the results back to the database
-            new saveTestResults().execute("This is a test");
+            postTestResults();
 
             //close this activity
             finish();
@@ -388,11 +391,9 @@ public class TestRunActivity extends Activity implements customButtonListener {
             // Only need to consider active bays
             if (rack.bays[i].active) {
                 String returnValue = testRun.bayItems[i].isPassReady(testRun.currentTestStep);
-
                 if (returnValue.equals("Passed")) {
                     testRun.bayItems[i].stepStatus = "Passed";
                 }
-
                 //count up the numbers of passed and failed units
                 if (testRun.bayItems[i].stepStatus.equals("Failed")) {
                     testRun.currentStepUnitsFailed = testRun.currentStepUnitsFailed + 1;
@@ -407,28 +408,21 @@ public class TestRunActivity extends Activity implements customButtonListener {
         }
 
         testRun.currentStepUnitsTested = testRun.currentStepUnitsFailed+testRun.currentStepUnitsPassed;
-        Boolean showView=true;
 
         if (testRun.overallUnitsFailed>=testRun.numberOfActiveBays) {
             // This is a special case where all units have failed
             // End the test run here, there is no more to say
             // do not load the next step
-            showView=false;
-            //TODO add in the routine to finish out the counts for all failed and move to the next screen
-            //Calculate results
-            testRun.calculateResults(rack);
-            // Spin off the async task to save the results back to the database
-            // TODO remove the database write and add it to the new activity
-            new saveTestResults().execute("This is a test");
-        } else if ( testRun.currentStepUnitsTested >= (testRun.numberOfActiveBays - testRun.overallUnitsFailed) ) {
+
+            showCompleteStepButton=true;
+        } else if ( testRun.currentStepUnitsTested >= testRun.numberOfActiveBays) {
             // There should be at least one unit that is still eligible to pass the run
-            showView=loadNextStep();
+            // Turn on the Complete Step button.
+            showCompleteStepButton=true;
         }
         // Only show the view and update saved state if we are not at the end of the run
-        if (showView) {
-            updateView();
-            saveTestRunState();
-        }
+        updateView();
+        saveTestRunState();
     }
 
     private void updateView(){
@@ -442,7 +436,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
 
             //Load the current step start time
             TextView currentStepStartTime = (TextView) findViewById(R.id.start_time);
-            SimpleDateFormat format = new SimpleDateFormat("yyyy MM dd hh:mm:ss");
+            SimpleDateFormat format = new SimpleDateFormat("yyyy MM dd hh:mm:ss", Locale.US);
             String dateToStr = format.format(testRun.testResult.getStartTime(testRun.currentTestStep - 1));
             currentStepStartTime.setText(dateToStr);
 
@@ -490,12 +484,16 @@ public class TestRunActivity extends Activity implements customButtonListener {
             stepInfo.setSingleLine(false);
             stepInfo.setText(newText);
 
-            // If the test step does not need a 'Pass All' button at the bottom, disable it here
-            if (testRun.currentTestStep == 1) {
-                // Turn off the footer view
-                footerView.setVisibility(View.INVISIBLE);
+            if (showCompleteStepButton) {
+                // This step is finished
+                // Activate the button and set the color and text
+                completeStepButton.setBackgroundColor(Color.GREEN);
+                completeStepButton.setText("Step Complete.  Move to Next Step");
             } else {
-                footerView.setVisibility(View.VISIBLE);
+                footerView.setBackgroundColor(Color.GRAY);
+                Integer baysPending = testRun.numberOfActiveBays - testRun.currentStepUnitsTested;
+                String buttonText = "Bays Pending :" + baysPending;
+                completeStepButton.setText(buttonText);
             }
             aa.notifyDataSetChanged();
         }
@@ -512,17 +510,21 @@ public class TestRunActivity extends Activity implements customButtonListener {
         editor.commit();
     }
 
-    private class saveTestResults extends AsyncTask<String, Void, String> {
-        @Override
-        protected String doInBackground(String... urls) {
-            testRun.saveTestResults(MainActivity.dbServerAddress,rack.numberOfBays);
+    private void postTestResults() {
+        //Calculate results
+        testRun.calculateResults(rack);
 
-            return urls[0];
-        }
-        @Override
-        protected void onPostExecute(String result) {
-            //do nothing for now
-        }
+        // We serialize the test run object to save it here via JSON
+        // The run includes the results we just calculated
+        testRunSavedState = gson.toJson(testRun);
+
+        // Load up the intent with the data and crank up the new activity
+        Intent newIntent = new Intent(context,PostTestResultActivity.class);
+        newIntent.putExtra("TestRun",testRunSavedState);
+        newIntent.putExtra("RackBays",rack.numberOfBays);
+        startActivity(newIntent);
+
+        finish();
     }
 
     class AttachDetachRunnable implements Runnable {
@@ -652,6 +654,25 @@ public class TestRunActivity extends Activity implements customButtonListener {
             listView.setAdapter(aa);
 
             if (resume) listView.smoothScrollToPosition(testRun.currentBay);
+
+            if (testRun.currentTestStep.equals(1)) {
+                // Make sure to put the cursor on the correct field
+                // Check the first bay
+                if (!(testRun.bayItems[0].isEditMitec || testRun.bayItems[0].isEditScentair)) {
+                    Integer nextBay = testRun.getNextActiveBay(0);
+
+                    if (!(testRun.bayItems[nextBay].isEditMitec || testRun.bayItems[nextBay].isEditScentair)) {
+                        // Set the next active bay here
+                        for (int i = 0; i < testRun.bayItems.length; i++) {
+                            testRun.bayItems[i].isEditScentair = false;
+                            testRun.bayItems[i].isEditMitec = false;
+                        }
+                        if (testRun.bayItems[nextBay].mitecBarcode.isEmpty()) {
+                            testRun.bayItems[nextBay].isEditMitec = true;
+                        } else testRun.bayItems[nextBay].isEditScentair = true;
+                    }
+                }
+            }
 
             // add the phidget interface stuff for the real time value.
             try {

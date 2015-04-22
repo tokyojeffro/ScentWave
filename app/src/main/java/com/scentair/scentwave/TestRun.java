@@ -122,6 +122,7 @@ public class TestRun{
             }
         }
 
+        // This structure is necessary for serialization and output to the database
         testResult.step1Start = testResult.stepStartTimes[0];
         testResult.step2Start = testResult.stepStartTimes[1];
         testResult.step3Start = testResult.stepStartTimes[2];

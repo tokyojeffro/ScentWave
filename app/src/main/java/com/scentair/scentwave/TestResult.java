@@ -1,19 +1,7 @@
 package com.scentair.scentwave;
 
-import android.util.Log;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.Expose;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicHeader;
-import org.apache.http.protocol.HTTP;
-
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -34,6 +22,7 @@ public class TestResult {
     @Expose public Date step3Stop;
     @Expose public Date step4Stop;
     @Expose public Date step5Stop;
+    @Expose public String comments;
     // Do not send up the ID, this is what we receive after posting to the database;
     public Integer id;
 
@@ -54,7 +43,8 @@ public class TestResult {
         stepStartTimes=new Date[numberOfTestSteps];
         stepEndTimes= new Date[numberOfTestSteps];
 
-        this.unitTests = new ArrayList<UnitTest>();
+        this.unitTests = new ArrayList<>();
+        this.comments="";
     }
 
     public void setStartTime(Integer testStepNumber) {
@@ -67,9 +57,5 @@ public class TestResult {
 
     public Date getStartTime (Integer testStepNumber) {
         return this.stepStartTimes[testStepNumber];
-    }
-
-    public Date getEndTime (Integer testStepNumber) {
-        return this.stepEndTimes[testStepNumber];
     }
 }

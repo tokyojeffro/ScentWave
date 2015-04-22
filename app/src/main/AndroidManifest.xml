@@ -22,11 +22,16 @@
         </activity>
         <activity android:name=".TestRunActivity"
             android:screenOrientation="portrait"
-            android:windowSoftInputMode="adjustPan">
+            android:windowSoftInputMode="stateAlwaysHidden|adjustPan">
             </activity>
-        <activity android:name=".MonitorActivity"></activity>
+        <activity android:name=".MonitorActivity"
+            android:screenOrientation="portrait"></activity>
         <activity android:name=".ChangeOperatorActivity"></activity>
-        <activity android:name=".CalibrationActivity"></activity>
-        <activity android:name=".PreferencesActivity"></activity>
+        <activity android:name=".CalibrationActivity"
+            android:screenOrientation="portrait"></activity>
+        <activity android:name=".PreferencesActivity"
+            android:screenOrientation="portrait"></activity>
+        <activity android:name=".PostTestResultActivity"
+            android:screenOrientation="portrait"></activity>
     </application>
 </manifest>

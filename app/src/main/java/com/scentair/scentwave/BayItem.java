@@ -1,9 +1,8 @@
 package com.scentair.scentwave;
 
-import org.apache.http.entity.StringEntity;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 public class BayItem{
     static final long ONE_MINUTE_IN_MILLIS=60000;
@@ -52,10 +51,6 @@ public class BayItem{
         this.fanMedDisplayValue="";
     }
 
-    //Constructor used to generate test results
-    public BayItem( ) {
-    }
-
     public String isPassReady(Integer testNumber) {
         // This is the logic that figures out whether a bay is ready to activate the Pass button
         // and move on to the next step
@@ -87,7 +82,7 @@ public class BayItem{
                 // fan values are saved when the unit state is settled on the target fan speed
                 if (medValue!=0 && lowValue!=0 && highValue!=0) {
                     returnValue = "Pass";
-                } else returnValue = "Fan speeds not recorded.";
+                } else returnValue = "Fan speeds not recorded";
                 break;
             case 4:
                 // There is no automatic pass criteria, this step is all operator driven.
@@ -101,7 +96,7 @@ public class BayItem{
                 if (!cycleTestComplete) {
                     long curTimeinMs = lastOffTime.getTime();
                     Date nextOffTime = new Date(curTimeinMs+(2*ONE_MINUTE_IN_MILLIS));
-                    SimpleDateFormat format = new SimpleDateFormat("hh:mm:ss");
+                    SimpleDateFormat format = new SimpleDateFormat("hh:mm:ss", Locale.US);
                     returnValue = format.format(nextOffTime);
                 } else {
                     returnValue = "Complete";
@@ -135,43 +130,43 @@ public class BayItem{
                     break;
             }
 
-            if (oldUnitState.equals("Low") && (
-                    unitState.equals("BackLight Off") ||
-                            unitState.equals("BackLight On") ||
-                            unitState.equals("Off") ||
-                            unitState.equals("FanTurnOn") )) {
-                // We have toggled from Low to Off (in some form)
-                // Save the timestamp info for future reference
-                if (lastOffTime != null) {
-                    // Check the difference here
-                    Date checkTime = new Date();
-                    SimpleDateFormat sdf = new SimpleDateFormat("KK:mm");
+            // Check to see if the cycle timer has already passed
+            // If so, ignore this
+            if (!cycleTestComplete) {
+                if (oldUnitState.equals("Low") && (
+                        unitState.equals("BackLight Off") ||
+                                unitState.equals("BackLight On") ||
+                                unitState.equals("Off") ||
+                                unitState.equals("FanTurnOn"))) {
+                    // We have toggled from Low to Off (in some form)
+                    // Save the timestamp info for future reference
+                    if (lastOffTime != null) {
+                        // Check the difference here
+                        Date checkTime = new Date();
 
-                    long difference = checkTime.getTime() - lastOffTime.getTime();
+                        // Time difference in milliseconds
+                        long difference = checkTime.getTime() - lastOffTime.getTime();
+                        Integer seconds = (int) (difference / 1000);
 
-                    Integer days = (int) (difference / (1000 * 60 * 60 * 24));
-                    Integer hours = (int) ((difference - (1000 * 60 * 60 * 24 * days)) / (1000 * 60 * 60));
-                    Integer min = (int) (difference - (1000 * 60 * 60 * 24 * days) - (1000 * 60 * 60 * hours)) / (1000 * 60);
-                    Integer seconds = (int) (difference/1000);
+                        // in any case, reset the date here so as not to smudge it with breakpoints
+                        lastOffTime = new Date();
 
-                    // in any case, reset the date here so as not to smudge it with breakpoints
-                    lastOffTime = new Date();
-
-                    switch (seconds) {
-                        case 119:
-                        case 120:
-                        case 121:
-                            // We have a winner for fan cycle test timing.
-                            cycleTestComplete = true;
-                            break;
-                        default:
-                            // No winner
-                            cycleTestComplete = false;
-                            break;
+                        switch (seconds) {
+                            case 119:
+                            case 120:
+                            case 121:
+                                // We have a winner for fan cycle test timing.
+                                cycleTestComplete = true;
+                                break;
+                            default:
+                                // No winner
+                                cycleTestComplete = false;
+                                break;
+                        }
+                    } else {
+                        // Set the reference time
+                        lastOffTime = new Date();
                     }
-                } else {
-                    // Set the reference time
-                    lastOffTime = new Date();
                 }
             }
         }
