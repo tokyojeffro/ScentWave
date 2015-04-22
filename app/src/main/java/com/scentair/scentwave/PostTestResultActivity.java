@@ -26,7 +26,7 @@ public class PostTestResultActivity extends Activity {
         Gson gson = new Gson();
         Intent intent = getIntent();
         String jsonTestRun = intent.getStringExtra("TestRun");
-        numberOfBays = Integer.getInteger("RackBays");
+        numberOfBays = intent.getIntExtra("RackBays",0);
         // Unpack JSON into the new local variable for the test run
         testRun = gson.fromJson(jsonTestRun,TestRun.class);
 
@@ -70,6 +70,7 @@ public class PostTestResultActivity extends Activity {
     public void postResults (View view) {
         testRun.testResult.comments = comments.getText().toString();
         new saveTestResults().execute("This text is necessary, but useless");
+        finish();
     }
 
     // layout button triggers this method to start new activity

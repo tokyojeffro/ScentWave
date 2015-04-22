@@ -86,7 +86,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
                 new loadDBValues().execute("http://this string argument does nothing");
             }
         });
-
         TextView phidget1Field = (TextView) findViewById(R.id.phidget_1);
         phidget1Field.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -111,7 +110,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
             }
         });
 
-
         Button saveAndExitButton = (Button) findViewById(R.id.save_and_exit_button);
         saveAndExitButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -132,7 +130,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
     public void onCalibrationIncrementButtonClickListener(int position, int listViewPosition) {
         // Increment the calibration offset value
         rack.bays[position].calibrationOffset++;
-
         updateView();
     }
 
@@ -140,7 +137,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
     public void onCalibrationDecrementButtonClickListener(int position, int listViewPosition) {
         // Increment the calibration offset value
         rack.bays[position].calibrationOffset--;
-
         updateView();
     }
 
@@ -148,7 +144,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
     protected void onDestroy() {
         super.onDestroy();
         // Disconnect and shut down all the phidgets and services.
-
         try {
             for (int i = 0; i < rack.numberOfPhidgetsPerRack; i++) {
                 rack.phidgets[i].phidget.close();
@@ -162,59 +157,63 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
     private void updateView() {
         //TestStep testStep = testSteps.get(testRun.currentTestStep-1);
         //Get the header info loaded from the data structure
+        String text = currentRack.toString();
+        toggleRackButton.setText(text);
 
-            String text = currentRack.toString();
-            toggleRackButton.setText(text);
-
-            // Set up phidget serial number 1
-            TextView phidgetSerialView = (TextView) findViewById(R.id.phidget_1);
-            text = rack.phidgets[0].phidgetSerialNumber.toString();
-            phidgetSerialView.setText(text);
-            try {
-                if (rack.phidgets[0].phidget.isAttached()) {
-                    // Set background color to green
-                    phidgetSerialView.setBackgroundColor(Color.GREEN);
-                } else {
-                    phidgetSerialView.setBackgroundColor(Color.LTGRAY);
-                }
-            } catch (PhidgetException pe) {
-                pe.printStackTrace();
+        // Set up phidget serial number 1
+        TextView phidgetSerialView = (TextView) findViewById(R.id.phidget_1);
+        text = rack.phidgets[0].phidgetSerialNumber.toString();
+        phidgetSerialView.setText(text);
+        try {
+            if (rack.phidgets[0].phidget.isAttached()) {
+                // Set background color to green
+                phidgetSerialView.setBackgroundColor(Color.GREEN);
+            } else {
+                phidgetSerialView.setBackgroundColor(Color.LTGRAY);
             }
+        } catch (PhidgetException pe) {
+            pe.printStackTrace();
+        }
 
-            // Set up phidget serial number 2
-            phidgetSerialView = (TextView) findViewById(R.id.phidget_2);
-            text = rack.phidgets[1].phidgetSerialNumber.toString();
-            phidgetSerialView.setText(text);
-            try {
-                if (rack.phidgets[1].phidget.isAttached()) {
-                    // Set background color to green
-                    phidgetSerialView.setBackgroundColor(Color.GREEN);
-                } else {
-                    phidgetSerialView.setBackgroundColor(Color.LTGRAY);
-                }
-            } catch (PhidgetException pe) {
-                pe.printStackTrace();
+        // Set up phidget serial number 2
+        phidgetSerialView = (TextView) findViewById(R.id.phidget_2);
+        text = rack.phidgets[1].phidgetSerialNumber.toString();
+        phidgetSerialView.setText(text);
+        try {
+            if (rack.phidgets[1].phidget.isAttached()) {
+                // Set background color to green
+                phidgetSerialView.setBackgroundColor(Color.GREEN);
+            } else {
+                phidgetSerialView.setBackgroundColor(Color.LTGRAY);
             }
-            // Set up phidget serial number 3
-            phidgetSerialView = (TextView) findViewById(R.id.phidget_3);
-            text = rack.phidgets[2].phidgetSerialNumber.toString();
-            phidgetSerialView.setText(text);
-            try {
-                if (rack.phidgets[2].phidget.isAttached()) {
-                    // Set background color to green
-                    phidgetSerialView.setBackgroundColor(Color.GREEN);
-                } else {
-                    phidgetSerialView.setBackgroundColor(Color.LTGRAY);
-                }
-            } catch (PhidgetException pe) {
-                pe.printStackTrace();
+        } catch (PhidgetException pe) {
+            pe.printStackTrace();
+        }
+        // Set up phidget serial number 3
+        phidgetSerialView = (TextView) findViewById(R.id.phidget_3);
+        text = rack.phidgets[2].phidgetSerialNumber.toString();
+        phidgetSerialView.setText(text);
+        try {
+            if (rack.phidgets[2].phidget.isAttached()) {
+                // Set background color to green
+                phidgetSerialView.setBackgroundColor(Color.GREEN);
+            } else {
+                phidgetSerialView.setBackgroundColor(Color.LTGRAY);
             }
-            aa.notifyDataSetChanged();
-
+        } catch (PhidgetException pe) {
+            pe.printStackTrace();
+        }
+        aa.notifyDataSetChanged();
     }
 
     private void saveAndExit() {
         new saveDBValues().execute("http://this is a test");
+
+        // Clear out any saved test runs because you can't reconcile the lists across bays.
+        editor.putString(TestRunActivity.TAG_SAVED_TEST_RUN,"");
+        editor.putBoolean(MainActivity.TAG_RESUME_AVAILABLE, false);
+        editor.commit();
+
         finish();
     }
 
@@ -239,8 +238,7 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
                     public void onClick(DialogInterface dialog, int which) {
                         //Load the proper failure reason into the failure field
                         String newPhidgetNumberString=phidgetList[which].toString();
-                        Integer newPhidgetNumberInteger = Integer.parseInt(newPhidgetNumberString);
-                        rack.phidgets[0].phidgetSerialNumber=newPhidgetNumberInteger;
+                        rack.phidgets[0].phidgetSerialNumber=Integer.parseInt(newPhidgetNumberString);
                         aa.notifyDataSetChanged();
                     }
                 })
@@ -253,6 +251,7 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
                 .setView(dialogView)
                 .show();
     }
+
     private void updatePhidget2(View v) {
         LayoutInflater inflater= getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.phidget_list,null);
@@ -274,8 +273,7 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
                     public void onClick(DialogInterface dialog, int which) {
                         //Load the proper failure reason into the failure field
                         String newPhidgetNumberString=phidgetList[which].toString();
-                        Integer newPhidgetNumberInteger = Integer.parseInt(newPhidgetNumberString);
-                        rack.phidgets[1].phidgetSerialNumber=newPhidgetNumberInteger;
+                        rack.phidgets[1].phidgetSerialNumber=Integer.parseInt(newPhidgetNumberString);
                         aa.notifyDataSetChanged();
                     }
                 })
@@ -288,6 +286,7 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
                 .setView(dialogView)
                 .show();
     }
+
     private void updatePhidget3(View v) {
         LayoutInflater inflater= getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.phidget_list,null);
@@ -309,8 +308,7 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
                     public void onClick(DialogInterface dialog, int which) {
                         //Load the proper failure reason into the failure field
                         String newPhidgetNumberString=phidgetList[which].toString();
-                        Integer newPhidgetNumberInteger = Integer.parseInt(newPhidgetNumberString);
-                        rack.phidgets[2].phidgetSerialNumber=newPhidgetNumberInteger;
+                        rack.phidgets[2].phidgetSerialNumber=Integer.parseInt(newPhidgetNumberString);
                         aa.notifyDataSetChanged();
                     }
                 })
@@ -332,7 +330,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
             this.phidget = phidget;
             this.attach = attach;
         }
-
         public void run() {
             //notify that we're done
             synchronized (this) {
@@ -382,9 +379,7 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
             // Continue setup after we have loaded the rack info from the DB.
             Manager phidgetManager;
             aa = new CalibrationBayArrayAdapter(context, rack.getBays());
-
             aa.setCustomCalibrationButtonListener(CalibrationActivity.this);
-
             listView.setAdapter(aa);
 
             // add the phidget interface stuff for the real time value.
@@ -442,5 +437,3 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
         }
     }
 }
-
-

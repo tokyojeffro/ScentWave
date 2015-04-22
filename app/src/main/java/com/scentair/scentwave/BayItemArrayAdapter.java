@@ -47,11 +47,6 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
         TextView bayInactiveText;
     }
 
-    public BayItemArrayAdapter(Context context, BayItem[] bayItems) {
-        super(context, R.layout.bayitem, bayItems);
-        this.context = context;
-    }
-
     public BayItemArrayAdapter(Context context, TestRun _testRun) {
         super(context, R.layout.bayitem, _testRun.bayItems);
         this.context = context;
@@ -80,7 +75,7 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
 
             viewHolder.bayInactive = (ViewGroup) rowView.findViewById(R.id.bay_item_inactive_bay);
 
-            viewHolder.activeRowLayout = (View) rowView.findViewById(R.id.bay_active_row_layout);
+            viewHolder.activeRowLayout = rowView.findViewById(R.id.bay_active_row_layout);
 
             viewHolder.bayItem = (ViewGroup) rowView.findViewById(R.id.bay_item);
 
@@ -106,7 +101,7 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
             // This changes the height of the inactive row to 100 from 300
             ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,100);
             holder.bayItem.setLayoutParams(params);
-            String text = "";
+            String text;
             Integer visiblePosition = position+1;
 
             if (!testRun.bayItems[position].isActive) {
@@ -131,40 +126,47 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
         }
 
         // This is the pass button logic
+        switch (testRun.bayItems[position].stepStatus) {
+            case "Not Tested":
+                //Make sure the button text is set back to default
+                holder.failButton.setText("Fail");
+                holder.failButton.setBackgroundColor(Color.parseColor("#FF4444"));
 
-        if (testRun.bayItems[position].stepStatus.equals("Not Tested")) {
-            //Make sure the button text is set back to default
-            holder.failButton.setText("Fail");
-            holder.failButton.setBackgroundColor(Color.parseColor("#FF4444"));
+                String returnValue = testRun.bayItems[position].isPassReady(testRun.currentTestStep);
+                holder.passButton.setText(returnValue);
 
-            String returnValue = testRun.bayItems[position].isPassReady(testRun.currentTestStep);
-            holder.passButton.setText(returnValue);
-
-            if (returnValue.equals("Pass")){
-                // The criteria for pass are met, enable the button and set the color to green
-                holder.passButton.setBackgroundColor(Color.parseColor("#99CC00"));
-            } else if (returnValue.equals("Passed")) {
-                // Little bit of a hack to mark the row as pass if the test for this bay is done
+                switch (returnValue) {
+                    case "Pass":
+                        // The criteria for pass are met, enable the button and set the color to green
+                        holder.passButton.setBackgroundColor(Color.parseColor("#99CC00"));
+                        break;
+                    case "Passed":
+                        // Little bit of a hack to mark the row as pass if the test for this bay is done
+                        holder.passButton.setText("Step Complete");
+                        holder.failButton.setText("");
+                        holder.passButton.setBackgroundColor(Color.parseColor("#99CC00"));
+                        holder.failButton.setBackgroundColor(Color.parseColor("#99CC00"));
+                        break;
+                    default:
+                        // criteria not met yet, turn gray and show the return message
+                        holder.passButton.setBackgroundColor(Color.LTGRAY);
+                        break;
+                }
+                break;
+            case "Passed":
+                // Gray things out and set text to passed
                 holder.passButton.setText("Step Complete");
                 holder.failButton.setText("");
                 holder.passButton.setBackgroundColor(Color.parseColor("#99CC00"));
                 holder.failButton.setBackgroundColor(Color.parseColor("#99CC00"));
-            } else {
-                // criteria not met yet, turn gray and show the return message
-                holder.passButton.setBackgroundColor(Color.LTGRAY);
-            }
-        } else if (testRun.bayItems[position].stepStatus.equals("Passed")) {
-            // Gray things out and set text to passed
-            holder.passButton.setText("Step Complete");
-            holder.failButton.setText("");
-            holder.passButton.setBackgroundColor(Color.parseColor("#99CC00"));
-            holder.failButton.setBackgroundColor(Color.parseColor("#99CC00"));
-        } else {
-            // Step failed for that bay
-            holder.passButton.setText("Failed");
-            holder.failButton.setText(testRun.bayItems[position].failCause);
-            holder.passButton.setBackgroundColor(Color.parseColor("#FF4444"));
-            holder.failButton.setBackgroundColor(Color.parseColor("#FF4444"));
+                break;
+            default:
+                // Step failed for that bay
+                holder.passButton.setText("Failed");
+                holder.failButton.setText(testRun.bayItems[position].failCause);
+                holder.passButton.setBackgroundColor(Color.parseColor("#FF4444"));
+                holder.failButton.setBackgroundColor(Color.parseColor("#FF4444"));
+                break;
         }
 
         // Load the data from the array into the view

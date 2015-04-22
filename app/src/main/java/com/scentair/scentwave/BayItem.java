@@ -67,7 +67,7 @@ public class BayItem{
                     this.stepStatus="Passed";
                 } else {
                     returnValue="Barcodes not entered";
-                    this.stepStatus = "Not Tested";
+                    //this.stepStatus = "Not Tested";
                 }
                 break;
             case 2:
@@ -99,7 +99,7 @@ public class BayItem{
                     SimpleDateFormat format = new SimpleDateFormat("hh:mm:ss", Locale.US);
                     returnValue = format.format(nextOffTime);
                 } else {
-                    returnValue = "Complete";
+                    returnValue = "Passed";
                     this.stepStatus = "Passed";
                 }
                 break;
@@ -107,11 +107,12 @@ public class BayItem{
         return returnValue;
     }
 
-    public void updateValue(Integer newValue) {
+    public Boolean updateValue(Integer newValue) {
         currentValue = newValue;
         oldUnitState = unitState;
+        Boolean refreshScreen = false;
 
-        if (isActive) {
+        if (isActive && !isFailed) {
             // Only process this if the bay is active in calibration
             unitState = TestRunActivity.machineStates.getState(newValue);
 
@@ -157,6 +158,8 @@ public class BayItem{
                             case 121:
                                 // We have a winner for fan cycle test timing.
                                 cycleTestComplete = true;
+                                stepStatus="Passed";
+                                refreshScreen = true;
                                 break;
                             default:
                                 // No winner
@@ -170,6 +173,7 @@ public class BayItem{
                 }
             }
         }
+        return refreshScreen;
     }
 
     @Override

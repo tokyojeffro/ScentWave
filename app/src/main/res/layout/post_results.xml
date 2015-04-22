@@ -3,14 +3,16 @@
     android:layout_height="fill_parent"
     android:layout_width="fill_parent">
     <RelativeLayout
-        android:layout_height="600dp"
+        android:layout_height="450dp"
         android:layout_width="400dp"
-        android:layout_centerInParent="true"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="50dp"
         android:background="@android:color/darker_gray"
         >
         <TextView
             android:layout_width="199dp"
-            android:layout_height="49dp"
+            android:layout_height="29dp"
             android:textSize="20dp"
             android:id="@+id/results_operator_name_label"
             android:text="Operator Name:"
@@ -21,7 +23,7 @@
             />
         <TextView
             android:layout_width="199dp"
-            android:layout_height="49dp"
+            android:layout_height="29dp"
             android:textSize="20dp"
             android:id="@+id/results_operator_name"
             android:text="Ted"
@@ -34,7 +36,7 @@
             />
         <TextView
             android:layout_width="199dp"
-            android:layout_height="49dp"
+            android:layout_height="29dp"
             android:textSize="20dp"
             android:id="@+id/results_active_bays_label"
             android:text="Active Bays:"
@@ -46,7 +48,7 @@
             />
         <TextView
             android:layout_width="199dp"
-            android:layout_height="49dp"
+            android:layout_height="29dp"
             android:textSize="20dp"
             android:id="@+id/results_active_bays"
             android:text="24"
@@ -59,7 +61,7 @@
             />
         <TextView
             android:layout_width="199dp"
-            android:layout_height="49dp"
+            android:layout_height="29dp"
             android:textSize="20dp"
             android:id="@+id/results_passed_label"
             android:text="Passed:"
@@ -71,7 +73,7 @@
             />
         <TextView
             android:layout_width="199dp"
-            android:layout_height="49dp"
+            android:layout_height="29dp"
             android:textSize="20dp"
             android:id="@+id/results_passed"
             android:text="22"
@@ -84,7 +86,7 @@
             />
         <TextView
             android:layout_width="199dp"
-            android:layout_height="49dp"
+            android:layout_height="29dp"
             android:textSize="20dp"
             android:id="@+id/results_failed_label"
             android:text="Failed:"
@@ -96,7 +98,7 @@
             />
         <TextView
             android:layout_width="199dp"
-            android:layout_height="49dp"
+            android:layout_height="29dp"
             android:textSize="20dp"
             android:id="@+id/results_failed"
             android:text="2"
@@ -109,7 +111,7 @@
             />
         <TextView
             android:layout_width="199dp"
-            android:layout_height="49dp"
+            android:layout_height="29dp"
             android:textSize="20dp"
             android:id="@+id/results_start_time_label"
             android:text="Start Time:"
@@ -121,7 +123,7 @@
             />
         <TextView
             android:layout_width="199dp"
-            android:layout_height="49dp"
+            android:layout_height="29dp"
             android:textSize="20dp"
             android:id="@+id/results_start_time"
             android:text="2014 04 20 11:37:42"
@@ -134,7 +136,7 @@
             />
         <TextView
             android:layout_width="199dp"
-            android:layout_height="49dp"
+            android:layout_height="29dp"
             android:textSize="20dp"
             android:id="@+id/results_stop_time_label"
             android:text="Stop Time:"
@@ -146,7 +148,7 @@
             />
         <TextView
             android:layout_width="199dp"
-            android:layout_height="49dp"
+            android:layout_height="29dp"
             android:textSize="20dp"
             android:id="@+id/results_stop_time"
             android:text="2014 04 20 11:59:42"
@@ -159,7 +161,7 @@
             />
         <TextView
             android:layout_width="199dp"
-            android:layout_height="49dp"
+            android:layout_height="29dp"
             android:textSize="20dp"
             android:id="@+id/results_duration_label"
             android:text="Duration:"
@@ -171,7 +173,7 @@
             />
         <TextView
             android:layout_width="199dp"
-            android:layout_height="49dp"
+            android:layout_height="29dp"
             android:textSize="20dp"
             android:id="@+id/results_duration"
             android:text="00:22:00"
@@ -184,7 +186,7 @@
             />
         <TextView
             android:layout_width="399dp"
-            android:layout_height="49dp"
+            android:layout_height="29dp"
             android:textSize="20dp"
             android:id="@+id/comment_label"
             android:text="Comments"

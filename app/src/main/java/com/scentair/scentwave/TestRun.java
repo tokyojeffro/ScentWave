@@ -110,13 +110,13 @@ public class TestRun{
                 testResult.unitTests.add(newUnitTest);
             }
         }
-        testResult.numberOfUnitsFailed = overallUnitsFailed;
-        testResult.numberOfUnitsPassed = numberOfActiveBays - overallUnitsFailed;
+        testResult.numberOfUnitsFailed = overallUnitsFailed + currentStepUnitsFailed;
+        testResult.numberOfUnitsPassed = numberOfActiveBays - testResult.numberOfUnitsFailed;
 
-        if (overallUnitsFailed.equals(numberOfActiveBays) && !currentTestStep.equals(maxTestSteps)) {
+        if (testResult.numberOfUnitsFailed>=numberOfActiveBays) {
             // Special case where all units have failed in this run
             // Set up the data structure for export by filling in the necessary blanks
-            for (int i=currentTestStep+1;i<maxTestSteps;i++) {
+            for (int i=0;i<maxTestSteps;i++) {
                 testResult.setStartTime(i);
                 testResult.setEndTime(i);
             }
@@ -322,16 +322,16 @@ public class TestRun{
         // First, build the link record objects
         ArrayList<DatabaseLinkRecord> linkRecords = new ArrayList<>();
 
-        for (int i=0;i<numberOfBays;i++) {
-            // Find the next active bay
-            if (bayItems[i].isActive) {
-                // If there are any active bays left
-                Integer unitTestId = testResult.unitTests.get(i).unitTestId;
-                Integer unitId = testResult.unitTests.get(i).unit.id;
-                DatabaseLinkRecord newRecord = new DatabaseLinkRecord(testRunId,unitTestId,unitId);
-                linkRecords.add(newRecord);
-            }
+        // For each Unit Test, build a new link record
+        Iterator<UnitTest> iterator = testResult.unitTests.iterator();
+        while (iterator.hasNext()) {
+            UnitTest nextTest = iterator.next();
+            Integer unitTestId = nextTest.unitTestId;
+            Integer unitId = nextTest.unit.id;
+            DatabaseLinkRecord newRecord = new DatabaseLinkRecord(testRunId,unitTestId,unitId);
+            linkRecords.add(newRecord);
         }
+
         // Now, output to the database
         httpClient = new DefaultHttpClient();
         // This is the url to update the 1004 unit table
