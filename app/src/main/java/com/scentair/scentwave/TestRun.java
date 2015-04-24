@@ -55,9 +55,8 @@ public class TestRun{
         testResult.setStartTime(0);
     }
 
-    public TestRun () {
-
-    }
+    // Empty constructor for reconstitution after resume
+    public TestRun () {}
 
     public TestRun getTestRun(){
         return this;
@@ -79,6 +78,35 @@ public class TestRun{
             return bayItems.length;
         } else return returnValue;
     }
+
+    public Integer setNextBarcodeEditField () {
+        Integer targetBay = -1;
+        // Look at the data and figure out where to put the cursor for barcode entry
+
+        // First, check the field we are starting on.  Is is active and does it have both barcode values already?
+        // If not, then we stay there.
+
+        // Need to go through the active list looking for the next target field
+        // Should clear each field before setting the target
+        for (int i=0;i<bayItems.length;i++) {
+            bayItems[i].isEditScentair = false;
+            bayItems[i].isEditMitec = false;
+
+            // If the bay is active and we have not found the target bay yet, then check the fields
+            if ((bayItems[i].isActive && targetBay.equals(-1))) {
+                if (bayItems[i].mitecBarcode.equals("")) {
+                    // Put the pointer here
+                    bayItems[i].isEditMitec = true;
+                    targetBay = i;
+                } else if (bayItems[i].scentairBarcode.equals("")) {
+                    bayItems[i].isEditScentair = true;
+                    targetBay = i;
+                }
+            }
+        }
+        return targetBay;
+    }
+
     public void calculateResults(Rack rack) {
         // Each unit in the test needs new unit and unittest objects
         for (int i=0;i<rack.numberOfBays;i++) {

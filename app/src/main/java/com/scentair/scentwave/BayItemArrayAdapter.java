@@ -106,13 +106,14 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
 
             if (!testRun.bayItems[position].isActive) {
                 text = "Bay " + visiblePosition + " is Inactive.  Change in calibration";
+                holder.bayInactiveText.setBackgroundColor(Color.YELLOW);
             } else if (testRun.bayItems[position].stepStatus.equals("Failed previous step")) {
                 text = "Bay " + visiblePosition + ":Fail step:" + testRun.bayItems[position].failStep + ":"+ testRun.bayItems[position].failCause;
+                holder.bayInactiveText.setBackgroundColor(Color.RED);
             } else {
                 text = "Calibration Issue - no input - check Phidget";
+                holder.bayInactiveText.setBackgroundColor(Color.RED);
             }
-
-            holder.bayInactiveText.setBackgroundColor(Color.YELLOW);
             holder.bayInactiveText.setTextSize(15);
             holder.bayInactiveText.setText(text);
         } else {
@@ -176,19 +177,32 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
         holder.unitStateField.setText(testRun.bayItems[position].unitState);
         holder.sensorReadingField.setText(String.valueOf(testRun.bayItems[position].currentValue));
 
-        // Here is where we manage the editing of the barcode fields magically
-        if (testRun.bayItems[position].isEditMitec) {
-            holder.mitecBarcodeField.setBackgroundColor(Color.LTGRAY);
-            holder.mitecBarcodeField.setCursorVisible(true);
-            holder.mitecBarcodeField.requestFocus();
-        } else if (testRun.bayItems[position].isEditScentair) {
-            holder.scentairBarcodeField.setBackgroundColor(Color.LTGRAY);
-            holder.scentairBarcodeField.setCursorVisible(true);
-            holder.scentairBarcodeField.requestFocus();
+        // Lock the barcode fields unless you are in step 1.
+        if (testRun.currentTestStep.equals(1)) {
+            // Here is where we manage the editing of the barcode fields magically
+            if (testRun.bayItems[position].isEditMitec) {
+                holder.mitecBarcodeField.setBackgroundColor(Color.LTGRAY);
+                holder.mitecBarcodeField.setCursorVisible(true);
+                holder.mitecBarcodeField.requestFocus();
+            } else if (testRun.bayItems[position].isEditScentair) {
+                holder.scentairBarcodeField.setBackgroundColor(Color.LTGRAY);
+                holder.scentairBarcodeField.setCursorVisible(true);
+                holder.scentairBarcodeField.requestFocus();
+            } else {
+                // Not editing this row
+                holder.mitecBarcodeField.setBackgroundColor(Color.WHITE);
+                holder.mitecBarcodeField.setCursorVisible(false);
+                holder.scentairBarcodeField.setBackgroundColor(Color.WHITE);
+                holder.scentairBarcodeField.setCursorVisible(false);
+            }
         } else {
-            // Not editing this row
-            holder.mitecBarcodeField.setBackgroundColor(Color.WHITE);
+            // Turn the barcode edit text fields into text views to protect them from edits.
+            holder.mitecBarcodeField.setEnabled(false);
             holder.mitecBarcodeField.setCursorVisible(false);
+            holder.mitecBarcodeField.setKeyListener(null);
+            holder.mitecBarcodeField.setBackgroundColor(Color.WHITE);
+            holder.scentairBarcodeField.setEnabled(false);
+            holder.scentairBarcodeField.setKeyListener(null);
             holder.scentairBarcodeField.setBackgroundColor(Color.WHITE);
             holder.scentairBarcodeField.setCursorVisible(false);
         }

@@ -7,6 +7,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import com.google.gson.Gson;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -88,7 +90,7 @@ public class PostTestResultActivity extends Activity {
         }
         @Override
         protected void onPostExecute(String result) {
-            //do nothing for now
+            Toast.makeText(getApplicationContext(),"Test Results Posted", Toast.LENGTH_LONG).show();
         }
     }
 }

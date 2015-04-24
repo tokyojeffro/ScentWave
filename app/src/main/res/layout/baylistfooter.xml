@@ -4,12 +4,12 @@
     android:id="@+id/bay_item_footer"
     android:orientation="horizontal"
     android:layout_width="fill_parent"
-    android:layout_height="300dp">
+    android:layout_height="150dp">
         <Button
             android:id="@+id/complete_step_button"
             android:text="Complete Step"
             android:layout_width="fill_parent"
-            android:layout_height="150dp"
+            android:layout_height="fill_parent"
             android:layout_centerHorizontal="true"
             android:layout_centerVertical="true"
             android:gravity="center"

@@ -8,6 +8,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class PreferencesActivity extends Activity {
     SharedPreferences sharedPreferences;
@@ -40,6 +41,7 @@ public class PreferencesActivity extends Activity {
                 editor.putString(MainActivity.TAG_DATABASE_SERVER_ADDRESS,dbSaveAddress);
                 editor.putString(MainActivity.TAG_PHIDGET_SERVER_ADDRESS,phidgetSaveAddress);
                 editor.commit();
+                Toast.makeText(getApplicationContext(), "Preferences updated", Toast.LENGTH_LONG).show();
                 finish();
             }
         });

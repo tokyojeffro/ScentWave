@@ -13,6 +13,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import com.phidgets.InterfaceKitPhidget;
 import com.phidgets.Manager;
 import com.phidgets.Phidget;
@@ -362,7 +364,7 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
         }
         @Override
         protected void onPostExecute(String result) {
-            //do nothing for now
+            Toast.makeText(getApplicationContext(), "Calibration updated", Toast.LENGTH_LONG).show();
         }
     }
 

@@ -1,29 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:weightSum="1">
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="50dp"
-        android:orientation="horizontal">
     <TextView
         android:id="@+id/current_operator_label"
         android:layout_width="300dp"
-        android:layout_height="fill_parent"
+        android:layout_height="50dp"
         android:textSize="25dp"
-        android:text="Current Operator:"/>
+        android:text="Current Operator:"
+        android:layout_gravity="left|top"
+        />
     <TextView
         android:id="@+id/current_operator"
         android:layout_width="300dp"
-        android:layout_height="fill_parent"
+        android:layout_height="50dp"
         android:textSize="25dp"
+        android:text="Current Operator:"
+        android:layout_toRightOf="@id/current_operator_label"
+        android:layout_gravity="right|top"
         />
-    </LinearLayout>
-    <LinearLayout android:layout_height="fill_parent" android:layout_width="match_parent" android:orientation="vertical"
-        android:gravity="center_vertical">
+    <TextView
+        android:id="@+id/touch_1"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        />
+    <TextView
+        android:id="@+id/touch_2"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        />
+    <TextView
+        android:id="@+id/touch_3"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        />
+    <TextView
+        android:id="@+id/touch_4"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        />
+    <RelativeLayout android:layout_height="fill_parent" android:layout_width="match_parent" android:orientation="vertical"
+        android:gravity="center_vertical|center_horizontal">
         <Button
             android:id="@+id/ChangeOperatorButton"
             android:text="Change Operator"
@@ -32,34 +60,7 @@
             android:layout_gravity="center"
             android:textSize="30dp"
             android:onClick="startChangeOperator"
-        />
-        <Button
-            android:id="@+id/PreferencesButton"
-            android:text="Change Preferences"
-            android:layout_width="300dp"
-            android:layout_height="100dp"
-            android:layout_gravity="center"
-            android:textSize="30dp"
-            android:onClick="startChangePreferences"
             />
-        <Button
-            android:id="@+id/CalibrateButton"
-            android:text="Calibrate Rack"
-            android:layout_width="300dp"
-            android:layout_height="100dp"
-            android:layout_gravity="center"
-            android:textSize="30dp"
-            android:onClick="startCalibrate"
-        />
-        <Button
-            android:id="@+id/MonitorButton"
-            android:text="Monitor"
-            android:layout_width="300dp"
-            android:layout_height="100dp"
-            android:layout_gravity="center"
-            android:textSize="30dp"
-            android:onClick="startMonitor"
-        />
         <Button
             android:id="@+id/StartTestButton"
             android:text="Start Test Run"
@@ -68,6 +69,7 @@
             android:layout_gravity="center"
             android:textSize="30dp"
             android:onClick="startTestRun"
+            android:layout_below="@id/ChangeOperatorButton"
             />
         <Button
             android:id="@+id/ResumeTestButton"
@@ -77,7 +79,8 @@
             android:layout_gravity="center"
             android:textSize="30dp"
             android:onClick="resumeTestRun"
+            android:layout_below="@id/StartTestButton"
             android:visibility="invisible"
             />
-    </LinearLayout>
-</LinearLayout>
+    </RelativeLayout>
+</RelativeLayout>

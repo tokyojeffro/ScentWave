@@ -1,12 +1,15 @@
 package com.scentair.scentwave;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.*;
 import android.content.*;
 import android.widget.Button;
 import android.widget.TextView;
+
+import com.phidgets.*;
 
 public class MainActivity extends Activity {
 
@@ -15,6 +18,12 @@ public class MainActivity extends Activity {
     public static TestSteps testSteps;
     public static Failures failures;
     private Boolean resumeRun = false;
+
+    // Admin screen locking status variables
+    private Boolean onePressed = false;
+    private Boolean twoPressed = false;
+    private Boolean threePressed = false;
+    private Boolean fourPressed = false;
 
     // These are the tags for the data stored in NVM as preferences
     public static final String TAG_MYPREFS = "ScentwavePrefs";
@@ -39,17 +48,41 @@ public class MainActivity extends Activity {
         dbServerAddress = sharedPreferences.getString(TAG_DATABASE_SERVER_ADDRESS,"192.168.1.26");
         resumeRun = sharedPreferences.getBoolean(TAG_RESUME_AVAILABLE,false);
 
+        // Set up the admin triggers
+        View adminOne = findViewById(R.id.touch_1);
+        adminOne.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                adminTouch(v,1);
+            }
+        });
+        adminOne = findViewById(R.id.touch_2);
+        adminOne.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                adminTouch(v,2);
+            }
+        });
+        adminOne = findViewById(R.id.touch_3);
+        adminOne.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                adminTouch(v,3);
+            }
+        });
+        adminOne = findViewById(R.id.touch_4);
+        adminOne.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                adminTouch(v,4);
+            }
+        });
+
         // Load up shared prefs and populate fields
         updateView();
 
         //start initialization from the DB in an asynchronous task
         new loadDBValues().execute("http://this is a test");
-    }
-
-    // layout button triggers this method to start new activity
-    public void startCalibrate (View view) {
-        Intent intent = new Intent(this,CalibrationActivity.class);
-        startActivity(intent);
     }
 
     // layout button triggers this method to start new activity
@@ -67,20 +100,8 @@ public class MainActivity extends Activity {
     }
 
     // layout button triggers this method to start new activity
-    public void startMonitor (View view) {
-        Intent intent = new Intent(this,MonitorActivity.class);
-        startActivity(intent);
-    }
-
-    // layout button triggers this method to start new activity
     public void startChangeOperator (View view) {
         Intent intent = new Intent(this,ChangeOperatorActivity.class);
-        startActivity(intent);
-    }
-
-    // layout button triggers this method to start new activity
-    public void startChangePreferences (View view) {
-        Intent intent = new Intent(this,PreferencesActivity.class);
         startActivity(intent);
     }
 
@@ -124,6 +145,58 @@ public class MainActivity extends Activity {
         else {
             Button button = (Button) findViewById(R.id.ResumeTestButton);
             button.setVisibility(Button.INVISIBLE);
+        }
+    }
+
+    private void adminTouch(View v,Integer pressed) {
+        // User has pressed one of the admin screen areas
+        switch(pressed) {
+            case 1:
+                // Start over
+                onePressed=true;
+                twoPressed=false;
+                threePressed=false;
+                fourPressed=false;
+                break;
+            case 2:
+                if (onePressed) {
+                    twoPressed=true;
+                } else {
+                    onePressed=false;
+                    twoPressed=false;
+                }
+                threePressed=false;
+                fourPressed=false;
+                break;
+            case 3:
+                if (onePressed && twoPressed) {
+                    threePressed=true;
+                } else {
+                    onePressed=false;
+                    twoPressed=false;
+                    threePressed=false;
+                }
+                fourPressed=false;
+                break;
+            case 4:
+                if (onePressed && twoPressed && threePressed) {
+                    // Start the admin activity
+                    Intent intent = new Intent(this, AdminActivity.class);
+                    startActivity(intent);
+                }
+                // Reset all triggers and require correct taps to re-enter
+                onePressed=false;
+                twoPressed=false;
+                threePressed=false;
+                fourPressed=false;
+                break;
+            default:
+                // reset all status variables;
+                onePressed=false;
+                twoPressed=false;
+                threePressed=false;
+                fourPressed=false;
+                break;
         }
     }
 

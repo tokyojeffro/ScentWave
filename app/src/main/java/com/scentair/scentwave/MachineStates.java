@@ -28,8 +28,6 @@ public class MachineStates{
             stateMap.put(i,initRange.state);
         }
 
-
-
         // Unplugged range
         initRange.min=0;
         initRange.max=9;

@@ -26,6 +26,7 @@ public class BayItem{
     public Boolean cycleTestComplete=false;
     public Date lastOffTime;
     private String oldUnitState;
+    private Date lastValueUpdateTime;
 
     //Constructor used for beginning a test run
     public BayItem (Integer bayNumber, boolean activeStatus) {
@@ -72,8 +73,8 @@ public class BayItem{
                 break;
             case 2:
                 // Pass criteria for step 2 is the machine has been plugged in and the state is
-                // not 'Unplugged'
-                if (!this.unitState.equals("Unplugged")) {
+                // not 'Unplugged' and not recalibrate
+                if ( ( !this.unitState.equals("Unplugged")) && (!this.unitState.equals("Recalibrate")) ) {
                     returnValue = "Pass";
                 } else returnValue="Machine not plugged in";
                 break;
@@ -107,30 +108,51 @@ public class BayItem{
         return returnValue;
     }
 
-    public Boolean updateValue(Integer newValue) {
+    public Boolean updateValue(Integer newValue, Integer testStepNumber) {
         currentValue = newValue;
         oldUnitState = unitState;
         Boolean refreshScreen = false;
+        Date newValueUpdateTime = new Date();
 
         if (isActive && !isFailed) {
-            // Only process this if the bay is active in calibration
+            // Only process this if the bay is active in calibration and have not already failed
+            // Check to see if our new value has triggered a state change.
             unitState = TestRunActivity.machineStates.getState(newValue);
 
-            // This switch saves off the representative values for the fan at each state
-            switch (unitState) {
-                case "Unplugged":
-                    break;
-                case "Low":
-                    lowValue = newValue;
-                    break;
-                case "Medium":
-                    medValue = newValue;
-                    break;
-                case "High":
-                    highValue = newValue;
-                    break;
-            }
+            // If we are in test step number 3, then start looking for the proper fan values
+            if (testStepNumber.equals(3)) {
+                if (!unitState.equals(oldUnitState)) {
+                    // Save off the new oldUnitState and set the timestamp
+                    oldUnitState = unitState;
+                    lastValueUpdateTime = new Date();
+                } else {
+                    // Now check the timestamp delta
+                    // If we have been in the same unitState for more than 2 seconds, we can save
+                    // off the values and trigger pass for this piece of this test step.
 
+                    // Check to see if we already have an update timestamp for the first value
+                    if (lastValueUpdateTime!=null) {
+                        Long difference = newValueUpdateTime.getTime() - lastValueUpdateTime.getTime();
+                        // The difference is in milliseconds
+                        if (difference > 2000) {
+                            // This switch saves off the representative values for the fan at each state
+                            switch (unitState) {
+                                case "Unplugged":
+                                    break;
+                                case "Low":
+                                    lowValue = newValue;
+                                    break;
+                                case "Medium":
+                                    medValue = newValue;
+                                    break;
+                                case "High":
+                                    highValue = newValue;
+                                    break;
+                            }
+                        }
+                    } else lastValueUpdateTime = newValueUpdateTime;
+                }
+            }
             // Check to see if the cycle timer has already passed
             // If so, ignore this
             if (!cycleTestComplete) {
@@ -144,14 +166,11 @@ public class BayItem{
                     if (lastOffTime != null) {
                         // Check the difference here
                         Date checkTime = new Date();
-
                         // Time difference in milliseconds
                         long difference = checkTime.getTime() - lastOffTime.getTime();
                         Integer seconds = (int) (difference / 1000);
-
                         // in any case, reset the date here so as not to smudge it with breakpoints
                         lastOffTime = new Date();
-
                         switch (seconds) {
                             case 119:
                             case 120:

@@ -14,6 +14,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import com.google.gson.Gson;
 import com.phidgets.Phidget;
 import com.phidgets.PhidgetException;
@@ -57,7 +59,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
     private static Integer[] popUpSpeeds = {
       41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59
     };
-
 
     /** Called when the activity is first created. */
     @Override
@@ -219,7 +220,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
     public void onScentAirBarCodeClickListener(int position, String candidateText) {
         // Scentair barcode has been entered, need to scroll to the next row
         // skip bays that are inactive
-        Integer nextBay;
+        Integer nextBay = -1;
         testRun.bayItems[position].isEditScentair=false;
 
         // First, check to see if the barcode is a valid scentair barcode
@@ -229,26 +230,18 @@ public class TestRunActivity extends Activity implements customButtonListener {
             // Check to see if the mitec field is also entered for this position, then move focus to the next row mitec field
             // If the mitec field is not entered, keep the focus on this row.
             testRun.bayItems[position].scentairBarcode=candidateText;
-
-            if (testRun.bayItems[position].mitecBarcode.isEmpty()) {
-                // Keep the focus on this row before moving on.
-                nextBay = position;
-
-            } else nextBay = testRun.getNextActiveBay(position);
-
-            if (nextBay<rack.numberOfBays) {
-                // if there are bays left to scroll to, move on down
-                testRun.bayItems[nextBay].isEditMitec = true;
-                listView.setSelection(nextBay);
-            }
-            updateCounts();
+            nextBay = testRun.setNextBarcodeEditField();
         } else if (candidateText.contains("REV")) {
             // This is a valid Mitec barcode.  Put it where it belongs and keep focus here.
             testRun.bayItems[position].mitecBarcode=candidateText;
-            testRun.bayItems[position].isEditScentair=true;
+            nextBay = testRun.setNextBarcodeEditField();
         } else {
             // This is not a valid barcode for either type.  Keep focus here
             testRun.bayItems[position].isEditScentair=true;
+        }
+        updateCounts();
+        if (!nextBay.equals(-1)) {
+            listView.setSelection(nextBay);
         }
         aa.notifyDataSetChanged();
     }
@@ -259,7 +252,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
         // validate it and enter it if is good.  then move to scentair field
         // need to move focus and cursor to scentair barcode
 
-        Integer nextBay;
+        Integer nextBay = -1;
         testRun.bayItems[position].isEditMitec=false;
 
         // First, check to see if the barcode is a valid scentair barcode
@@ -269,26 +262,18 @@ public class TestRunActivity extends Activity implements customButtonListener {
             // Check to see if the scentair field is also entered for this position, if not, move focus to that
             // if there is a scentair code already entered, move to next active bay mitec field.
             testRun.bayItems[position].mitecBarcode=candidateText;
-
-            if (testRun.bayItems[position].scentairBarcode.isEmpty()) {
-                // Keep the focus on this row before moving on.
-                nextBay = position;
-                testRun.bayItems[nextBay].isEditScentair=true;
-            } else {
-                nextBay = testRun.getNextActiveBay(position);
-                if (nextBay<rack.numberOfBays) {
-                    // if there are bays left to scroll to, move on down
-                    testRun.bayItems[nextBay].isEditMitec = true;
-                    listView.smoothScrollToPosition(nextBay);
-                }
-            }
+            nextBay = testRun.setNextBarcodeEditField();
         } else if (candidateText.endsWith(".00")) {
             // This is a valid scentair barcode.  Put it where it belongs and keep focus here.
             testRun.bayItems[position].scentairBarcode=candidateText;
-            testRun.bayItems[position].isEditMitec=true;
+            nextBay = testRun.setNextBarcodeEditField();
         } else {
             // This is not a valid barcode for either type.  Keep focus here
             testRun.bayItems[position].isEditMitec=true;
+        }
+        updateCounts();
+        if (!nextBay.equals(-1)) {
+            listView.setSelection(nextBay);
         }
         aa.notifyDataSetChanged();
     }
@@ -617,7 +602,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
             // Put the value from the phidget into the
             Integer bayValue = (phidgetNumber*8)+sensorIndex;
             Integer updatedValue = sensorVal + rack.bays[bayValue].calibrationOffset;
-            Boolean refreshScreen = testRun.bayItems[bayValue].updateValue(updatedValue);
+            Boolean refreshScreen = testRun.bayItems[bayValue].updateValue(updatedValue,testRun.currentTestStep);
             aa.notifyDataSetChanged();
             if (refreshScreen) {
                 updateCounts();
@@ -680,6 +665,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 testRunSavedState = sharedPreferences.getString(TAG_SAVED_TEST_RUN,"");
 
                 testRun = gson.fromJson(testRunSavedState,TestRun.class);
+                Toast.makeText(getApplicationContext(), "Test Run Resumed", Toast.LENGTH_LONG).show();
             }
             else {
                 //Initialize this test run
@@ -701,20 +687,8 @@ public class TestRunActivity extends Activity implements customButtonListener {
             if (testRun.currentTestStep.equals(1)) {
                 // Make sure to put the cursor on the correct field
                 // Check the first bay
-                if (!(testRun.bayItems[0].isEditMitec || testRun.bayItems[0].isEditScentair)) {
-                    Integer nextBay = testRun.getNextActiveBay(0);
-
-                    if (!(testRun.bayItems[nextBay].isEditMitec || testRun.bayItems[nextBay].isEditScentair)) {
-                        // Set the next active bay here
-                        for (int i = 0; i < testRun.bayItems.length; i++) {
-                            testRun.bayItems[i].isEditScentair = false;
-                            testRun.bayItems[i].isEditMitec = false;
-                        }
-                        if (testRun.bayItems[nextBay].mitecBarcode.isEmpty()) {
-                            testRun.bayItems[nextBay].isEditMitec = true;
-                        } else testRun.bayItems[nextBay].isEditScentair = true;
-                    }
-                }
+                Integer targetBay = testRun.setNextBarcodeEditField();
+                listView.setSelection(targetBay);
             }
             // add the phidget interface stuff for the real time value.
             try {
