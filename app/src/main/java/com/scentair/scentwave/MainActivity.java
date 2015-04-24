@@ -1,15 +1,12 @@
 package com.scentair.scentwave;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.*;
 import android.content.*;
 import android.widget.Button;
 import android.widget.TextView;
-
-import com.phidgets.*;
 
 public class MainActivity extends Activity {
 
@@ -23,7 +20,6 @@ public class MainActivity extends Activity {
     private Boolean onePressed = false;
     private Boolean twoPressed = false;
     private Boolean threePressed = false;
-    private Boolean fourPressed = false;
 
     // These are the tags for the data stored in NVM as preferences
     public static final String TAG_MYPREFS = "ScentwavePrefs";
@@ -53,28 +49,28 @@ public class MainActivity extends Activity {
         adminOne.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                adminTouch(v,1);
+                adminTouch(1);
             }
         });
         adminOne = findViewById(R.id.touch_2);
         adminOne.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                adminTouch(v,2);
+                adminTouch(2);
             }
         });
         adminOne = findViewById(R.id.touch_3);
         adminOne.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                adminTouch(v,3);
+                adminTouch(3);
             }
         });
         adminOne = findViewById(R.id.touch_4);
         adminOne.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                adminTouch(v,4);
+                adminTouch(4);
             }
         });
 
@@ -148,7 +144,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void adminTouch(View v,Integer pressed) {
+    private void adminTouch(Integer pressed) {
         // User has pressed one of the admin screen areas
         switch(pressed) {
             case 1:
@@ -156,7 +152,6 @@ public class MainActivity extends Activity {
                 onePressed=true;
                 twoPressed=false;
                 threePressed=false;
-                fourPressed=false;
                 break;
             case 2:
                 if (onePressed) {
@@ -166,7 +161,6 @@ public class MainActivity extends Activity {
                     twoPressed=false;
                 }
                 threePressed=false;
-                fourPressed=false;
                 break;
             case 3:
                 if (onePressed && twoPressed) {
@@ -176,7 +170,6 @@ public class MainActivity extends Activity {
                     twoPressed=false;
                     threePressed=false;
                 }
-                fourPressed=false;
                 break;
             case 4:
                 if (onePressed && twoPressed && threePressed) {
@@ -188,14 +181,12 @@ public class MainActivity extends Activity {
                 onePressed=false;
                 twoPressed=false;
                 threePressed=false;
-                fourPressed=false;
                 break;
             default:
                 // reset all status variables;
                 onePressed=false;
                 twoPressed=false;
                 threePressed=false;
-                fourPressed=false;
                 break;
         }
     }
