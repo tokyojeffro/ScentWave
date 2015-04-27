@@ -7,6 +7,7 @@ import android.view.*;
 import android.content.*;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class MainActivity extends Activity {
 
@@ -15,6 +16,7 @@ public class MainActivity extends Activity {
     public static TestSteps testSteps;
     public static Failures failures;
     private Boolean resumeRun = false;
+    private Boolean dbLoadError = false;
 
     // Admin screen locking status variables
     private Boolean onePressed = false;
@@ -74,11 +76,11 @@ public class MainActivity extends Activity {
             }
         });
 
-        // Load up shared prefs and populate fields
-        updateView();
-
         //start initialization from the DB in an asynchronous task
         new loadDBValues().execute("http://this is a test");
+
+        // Load up shared prefs and populate fields
+        updateView();
     }
 
     // layout button triggers this method to start new activity
@@ -104,22 +106,40 @@ public class MainActivity extends Activity {
     private class loadDBValues extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... urls) {
-            operators = new Operators(dbServerAddress);
-            testSteps = new TestSteps(dbServerAddress);
-            failures = new Failures(dbServerAddress);
+            try {
+                operators = new Operators(dbServerAddress);
+                testSteps = new TestSteps(dbServerAddress);
+                failures = new Failures(dbServerAddress);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                dbLoadError=true;
+            }
 
             return urls[0];
         }
         @Override
         protected void onPostExecute(String result) {
-          //do nothing for now
+            if (dbLoadError) {
+                Toast.makeText(getApplicationContext(), "Update DB address in preferences", Toast.LENGTH_LONG).show();
+                TextView textView = (TextView) findViewById(R.id.db_load_error);
+                textView.setVisibility(View.VISIBLE);
+            } else {
+                TextView textView = (TextView) findViewById(R.id.db_load_error);
+                textView.setVisibility(View.INVISIBLE);
+                Toast.makeText(getApplicationContext(), "Database settings loaded", Toast.LENGTH_LONG).show();
+            }
+
         }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        //check if this is what happens
+        if (dbLoadError) {
+            // try to load the DB values again
+            new loadDBValues().execute("http://this is a test");
+        }
         updateView();
     }
 
@@ -142,6 +162,13 @@ public class MainActivity extends Activity {
             Button button = (Button) findViewById(R.id.ResumeTestButton);
             button.setVisibility(Button.INVISIBLE);
         }
+
+        textView = (TextView) findViewById(R.id.db_load_error);
+
+        if (dbLoadError) {
+            textView.setVisibility(View.VISIBLE);
+            Toast.makeText(getApplicationContext(), "Update DB address in preferences", Toast.LENGTH_LONG).show();
+        } else textView.setVisibility(View.INVISIBLE);
     }
 
     private void adminTouch(Integer pressed) {

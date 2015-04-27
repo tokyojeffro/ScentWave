@@ -88,13 +88,15 @@ public class CalibrationBayArrayAdapter extends ArrayAdapter<Bay> {
         }
 
         // Load the data from the array into the view
-
         holder.bayNumberField.setText(String.valueOf(bays[position].bayNumber));
 
         // Apply calibration.
         holder.rawValueField.setText(bays[position].rawValue.toString());
         Integer calibratedValue = bays[position].rawValue + bays[position].calibrationOffset;
-        holder.calibratedValueField.setText(calibratedValue.toString());
+        String plusMinus = " + ";
+        if (bays[position].calibrationOffset < 0) plusMinus = " - ";
+        String calibrationText = bays[position].rawValue.toString() + plusMinus + bays[position].calibrationOffset.toString() + " = " + calibratedValue.toString();
+        holder.calibratedValueField.setText(calibrationText);
 
         holder.toggleActiveButton.setOnClickListener(new View.OnClickListener() {
             @Override

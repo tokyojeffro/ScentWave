@@ -10,6 +10,7 @@ public class BayItem{
     public String mitecBarcode;
     public String scentairBarcode;
     public String unitState;
+    // just setting this to something unusual for default.  -50 should never happen
     public Integer currentValue=-50;
     public String stepStatus;
     public Boolean isFailed;
@@ -26,7 +27,9 @@ public class BayItem{
     public Boolean cycleTestComplete=false;
     public Date lastOffTime;
     private String oldUnitState;
+    public String lcdState;
     private Date lastValueUpdateTime;
+    private Integer oldCurrentValue;
 
     //Constructor used for beginning a test run
     public BayItem (Integer bayNumber, boolean activeStatus) {
@@ -34,6 +37,7 @@ public class BayItem{
         this.mitecBarcode = "";
         this.scentairBarcode = "";
         this.currentValue = -50;
+        this.oldCurrentValue= -50;
         this.stepStatus = "Not Tested";
         this.unitState = "Unplugged";
         this.oldUnitState = "Unplugged";
@@ -50,6 +54,7 @@ public class BayItem{
         this.lastOffTime = new Date();
         this.cycleTestComplete=false;
         this.fanMedDisplayValue="";
+        this.lcdState="OFF";
     }
 
     public String isPassReady(Integer testNumber) {
@@ -109,6 +114,7 @@ public class BayItem{
     }
 
     public Boolean updateValue(Integer newValue, Integer testStepNumber) {
+        oldCurrentValue = currentValue;
         currentValue = newValue;
         oldUnitState = unitState;
         Boolean refreshScreen = false;
@@ -119,6 +125,7 @@ public class BayItem{
             // Check to see if our new value has triggered a state change.
             unitState = TestRunActivity.machineStates.getState(newValue);
 
+            // If we are in test step number 3, then start looking for the proper fan values
             // If we are in test step number 3, then start looking for the proper fan values
             if (testStepNumber.equals(3)) {
                 if (!unitState.equals(oldUnitState)) {
@@ -131,26 +138,30 @@ public class BayItem{
                     // off the values and trigger pass for this piece of this test step.
 
                     // Check to see if we already have an update timestamp for the first value
-                    if (lastValueUpdateTime!=null) {
-                        Long difference = newValueUpdateTime.getTime() - lastValueUpdateTime.getTime();
-                        // The difference is in milliseconds
-                        if (difference > 2000) {
-                            // This switch saves off the representative values for the fan at each state
-                            switch (unitState) {
-                                case "Unplugged":
-                                    break;
-                                case "Low":
-                                    lowValue = newValue;
-                                    break;
-                                case "Medium":
-                                    medValue = newValue;
-                                    break;
-                                case "High":
-                                    highValue = newValue;
-                                    break;
+                    if (lowValue.equals(0) || medValue.equals(0) || highValue.equals(0)) {
+                        if (lastValueUpdateTime != null) {
+                            Long difference = newValueUpdateTime.getTime() - lastValueUpdateTime.getTime();
+                            // The difference is in milliseconds.
+                            Integer fanWaitMillis = 1000*2;
+
+                            if (difference > fanWaitMillis) {
+                                // This switch saves off the representative values for the fan at each state
+                                switch (unitState) {
+                                    case "Unplugged":
+                                        break;
+                                    case "Low":
+                                        lowValue = oldCurrentValue;
+                                        break;
+                                    case "Medium":
+                                        medValue = oldCurrentValue;
+                                        break;
+                                    case "High":
+                                        highValue = oldCurrentValue;
+                                        break;
+                                }
                             }
-                        }
-                    } else lastValueUpdateTime = newValueUpdateTime;
+                        } else lastValueUpdateTime = newValueUpdateTime;
+                    }
                 }
             }
             // Check to see if the cycle timer has already passed
@@ -172,12 +183,17 @@ public class BayItem{
                         // in any case, reset the date here so as not to smudge it with breakpoints
                         lastOffTime = new Date();
                         switch (seconds) {
+                            case 117:
+                            case 118:
                             case 119:
                             case 120:
                             case 121:
+                            case 122:
+                            case 123:
                                 // We have a winner for fan cycle test timing.
                                 cycleTestComplete = true;
-                                stepStatus="Passed";
+                                stepStatus = "Passed";
+                                lcdState = "OFF";
                                 refreshScreen = true;
                                 break;
                             default:

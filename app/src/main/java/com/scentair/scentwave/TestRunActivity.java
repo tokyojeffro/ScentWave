@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -15,7 +16,6 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import com.google.gson.Gson;
 import com.phidgets.Phidget;
 import com.phidgets.PhidgetException;
@@ -30,11 +30,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Locale;
 
-
 public class TestRunActivity extends Activity implements customButtonListener {
 
     public static final String TAG_SAVED_TEST_RUN="SAVED_TEST_RUN";
-
     private String phidgetServerAddress;
     private TestRun testRun;
     private Rack rack;
@@ -51,14 +49,12 @@ public class TestRunActivity extends Activity implements customButtonListener {
     static public MachineStates machineStates;
     private String showCompleteStepButton = "";
     private Button completeStepButton;
+    private Resources resources;
+    private static int[] popUpSpeeds;
 
     // These are used to save the current state of the test run to prefs
     private String testRunSavedState;
     private Gson gson;
-
-    private static Integer[] popUpSpeeds = {
-      41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59
-    };
 
     /** Called when the activity is first created. */
     @Override
@@ -83,6 +79,8 @@ public class TestRunActivity extends Activity implements customButtonListener {
         phidgetServerAddress = sharedPreferences.getString(MainActivity.TAG_PHIDGET_SERVER_ADDRESS,"192.168.1.22");
 
         machineStates = new MachineStates();
+        resources = getResources();
+        popUpSpeeds= resources.getIntArray(R.array.POP_UP_FAN_SPEEDS);
 
         failureList = MainActivity.failures.getFailures();
 //        rack = MainActivity.rack.getRack();
@@ -120,44 +118,65 @@ public class TestRunActivity extends Activity implements customButtonListener {
 
         //Check to see if they are marking a previous failed unit as passed.
         //if so, clear the data and reset to untested.
-        if (testRun.bayItems[position].stepStatus.equals("Failed")) {
-            // Clear the previous failure cause
-            testRun.bayItems[position].failCause = "";
-            testRun.bayItems[position].failCauseIndex = 0;
-            testRun.bayItems[position].isFailed = false;
-            // Reset tested status
-            testRun.bayItems[position].stepStatus = "Not Tested";
-        } else {
-            testRun.bayItems[position].stepStatus = "Passed";
-            if (testRun.currentTestStep.equals(3)) {
-                // This is a special case.  Requires a dialog popup to pick a value for the fan
-                // noted visually by the operator
-                LayoutInflater inflater= getLayoutInflater();
-                View dialogView = inflater.inflate(R.layout.fanspeedpopup,null);
+        String passStatus = testRun.bayItems[position].isPassReady(testRun.currentTestStep);
 
-                final CharSequence[] popUpSpeedStrings = new CharSequence[popUpSpeeds.length];
+        switch ( testRun.bayItems[position].stepStatus) {
+            case "Failed":
+                // Clear the previous failure cause
+                testRun.bayItems[position].failCause = "";
+                testRun.bayItems[position].failCauseIndex = 0;
+                testRun.bayItems[position].isFailed = false;
+                // Reset tested status
+                testRun.bayItems[position].stepStatus = "Not Tested";
+                break;
+            case "Passed":
+                // The bay has already been passed
+                if (testRun.currentTestStep.equals(3)) {
+                    // This is a special case.  Requires a dialog popup to pick a value for the fan
+                    // noted visually by the operator
+                    LayoutInflater inflater = getLayoutInflater();
+                    View dialogView = inflater.inflate(R.layout.fanspeedpopup, null);
 
-                for (int i=0;i<popUpSpeeds.length;i++) {
-                    popUpSpeedStrings[i] = popUpSpeeds[i].toString();
+                    final CharSequence[] popUpSpeedStrings = new CharSequence[popUpSpeeds.length];
+
+                    for (int i = 0; i < popUpSpeeds.length; i++) {
+                        Integer popUpSpeed = popUpSpeeds[i];
+                        popUpSpeedStrings[i] = popUpSpeed.toString();
+                    }
+
+                    final int bayPosition = position;
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle("Fan Display Value")
+                            .setItems(popUpSpeedStrings, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    //Load the proper failure reason into the failure field
+                                    testRun.bayItems[bayPosition].fanMedDisplayValue = popUpSpeedStrings[which].toString();
+                                    aa.notifyDataSetChanged();
+                                }
+                            })
+                            .setView(dialogView)
+                            .show();
+
                 }
-
-                final int bayPosition = position;
-
-                AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle("Fan Display Value")
-                        .setItems(popUpSpeedStrings, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                //Load the proper failure reason into the failure field
-                                testRun.bayItems[bayPosition].fanMedDisplayValue = popUpSpeedStrings[which].toString();
-                                aa.notifyDataSetChanged();
-                            }
-                        })
-                        .setView(dialogView)
-                        .show();
-
-            }
-            listView.smoothScrollToPosition(position+2);
+                listView.smoothScrollToPosition(position+2);
+                break;
+            case "Pass":
+            case "Not Tested":
+                // Check the status of the bay.  Is it pass ready?
+                if (passStatus.equals("Pass")|| (passStatus.equals("Passed"))) {
+                    // They have pressed the pass button, the bay thinks it is pass ready.  Pass it.
+                    testRun.bayItems[position].stepStatus = "Passed";
+                    listView.smoothScrollToPosition(position+2);
+                }
+                break;
+            case "Machine not plugged in":
+            case "Fan speeds not recorded":
+            case "Barcodes not entered":
+            default:
+                // The pass button should toggle a fail back to not tested.  If the bay has not failed,
+                // do nothing.
+                break;
         }
         // update results totals
         updateCounts();
@@ -176,9 +195,11 @@ public class TestRunActivity extends Activity implements customButtonListener {
         if (testRun.bayItems[position].stepStatus.equals("Passed")) {
             // Toggle back to normal state
             testRun.bayItems[position].stepStatus = "Not Tested";
+            testRun.bayItems[position].lcdState = "ON";
         } else {
         // Here we need an AlertDialog that provides a list of potential failure reasons
             TestStep testStep = testSteps.get(testRun.currentTestStep-1);
+            testRun.bayItems[position].lcdState = "OFF";
 
             final CharSequence[] failureStrings = new CharSequence[testStep.possibleFailures.size()];
 
@@ -222,16 +243,18 @@ public class TestRunActivity extends Activity implements customButtonListener {
         // skip bays that are inactive
         Integer nextBay = -1;
         testRun.bayItems[position].isEditScentair=false;
+        String mitecCheckString = resources.getString(R.string.MITEC_BARCODE_CHECK);
+        String scentairCheckString = resources.getString(R.string.SCENTAIR_BARCODE_CHECK);
 
         // First, check to see if the barcode is a valid scentair barcode
-        if (candidateText.endsWith(".00")) {
+        if (candidateText.endsWith(scentairCheckString)) {
             // This is a valid scentair barcode
             // Save it into the array
             // Check to see if the mitec field is also entered for this position, then move focus to the next row mitec field
             // If the mitec field is not entered, keep the focus on this row.
             testRun.bayItems[position].scentairBarcode=candidateText;
             nextBay = testRun.setNextBarcodeEditField();
-        } else if (candidateText.contains("REV")) {
+        } else if (candidateText.contains(mitecCheckString)) {
             // This is a valid Mitec barcode.  Put it where it belongs and keep focus here.
             testRun.bayItems[position].mitecBarcode=candidateText;
             nextBay = testRun.setNextBarcodeEditField();
@@ -254,16 +277,18 @@ public class TestRunActivity extends Activity implements customButtonListener {
 
         Integer nextBay = -1;
         testRun.bayItems[position].isEditMitec=false;
+        String mitecCheckString = resources.getString(R.string.MITEC_BARCODE_CHECK);
+        String scentairCheckString = resources.getString(R.string.SCENTAIR_BARCODE_CHECK);
 
         // First, check to see if the barcode is a valid scentair barcode
-        if (candidateText.contains("REV")) {
+        if (candidateText.contains(mitecCheckString)) {
             // This is a valid mitec barcode
             // Save it into the array
             // Check to see if the scentair field is also entered for this position, if not, move focus to that
             // if there is a scentair code already entered, move to next active bay mitec field.
             testRun.bayItems[position].mitecBarcode=candidateText;
             nextBay = testRun.setNextBarcodeEditField();
-        } else if (candidateText.endsWith(".00")) {
+        } else if (candidateText.endsWith(scentairCheckString)) {
             // This is a valid scentair barcode.  Put it where it belongs and keep focus here.
             testRun.bayItems[position].scentairBarcode=candidateText;
             nextBay = testRun.setNextBarcodeEditField();
@@ -309,7 +334,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 }
             }
         }
-
         if (moveToNextStep) {
             showView=loadNextStep();
         }
@@ -335,8 +359,10 @@ public class TestRunActivity extends Activity implements customButtonListener {
                     testRun.bayItems[i].isFailed = true;
                     testRun.bayItems[i].failStep = testRun.currentTestStep;
                     testRun.overallUnitsFailed++;
+                    testRun.bayItems[i].lcdState = "OFF";
                 } else if (testRun.bayItems[i].stepStatus.equals("Passed")) {
                     testRun.bayItems[i].stepStatus = "Not Tested";
+                    testRun.bayItems[i].lcdState = "ON";
                 }
             } else testRun.bayItems[i].stepStatus = "Inactive";
         }
@@ -344,38 +370,36 @@ public class TestRunActivity extends Activity implements customButtonListener {
         testRun.currentStepUnitsFailed = 0;
         testRun.currentStepUnitsPassed = 0;
         testRun.currentStepUnitsTested = 0;
-
         // Turn off complete step button
         showCompleteStepButton="";
-
         // Update the step complete timestamp
         testRun.testResult.setEndTime(testRun.currentTestStep-1);
-
         // go to next step
         testRun.currentTestStep++;
-
         // Check if that is the end of the steps and end of this run
         if (testRun.currentTestStep>testRun.maxTestSteps)
         {
             // End of this run, report results.
-
             //Update NVM to show the last test run was completed
             editor.putBoolean(MainActivity.TAG_RESUME_AVAILABLE,false);
             editor.putString(TAG_SAVED_TEST_RUN, "");
             editor.commit();
-
             postTestResults();
-
             //close this activity
             finish();
         }
         else {
             // There is at least one more step left in this run
             returnValue=true;
-
+            // Turn the bay lights back on
+            for (int i=0;i<rack.numberOfBays;i++) {
+                if (testRun.bayItems[i].isActive) {
+                    testRun.bayItems[i].lcdState="ON";
+                    updateLED(i, true);
+                }
+            }
             //Update the step begun timestamp
             testRun.testResult.setStartTime(testRun.currentTestStep - 1);
-
             //scroll back to the top of the list
             listView.smoothScrollToPosition(0);
         }
@@ -400,6 +424,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
         testRun.currentStepUnitsFailed=0;
         testRun.currentStepUnitsPassed=0;
         testRun.overallUnitsFailed=0;
+        testRun.currentStepUnitsTested=0;
         showCompleteStepButton="";
 
         // update results totals
@@ -409,17 +434,24 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 String returnValue = testRun.bayItems[i].isPassReady(testRun.currentTestStep);
                 if (returnValue.equals("Passed")) {
                     testRun.bayItems[i].stepStatus = "Passed";
+                    testRun.bayItems[i].lcdState = "OFF";
                 }
                 //count up the numbers of passed and failed units
                 if (testRun.bayItems[i].stepStatus.equals("Failed")) {
                     testRun.currentStepUnitsFailed = testRun.currentStepUnitsFailed + 1;
+                    testRun.bayItems[i].lcdState = "OFF";
                 }
                 if (testRun.bayItems[i].stepStatus.equals("Passed")) {
                     testRun.currentStepUnitsPassed = testRun.currentStepUnitsPassed + 1;
+                    testRun.bayItems[i].lcdState = "OFF";
                 }
                 if (testRun.bayItems[i].stepStatus.equals("Failed previous step")) {
                     testRun.overallUnitsFailed = testRun.overallUnitsFailed + 1;
+                    testRun.bayItems[i].lcdState = "OFF";
                 }
+                Boolean turnOn = false;
+                if (testRun.bayItems[i].lcdState.equals("ON")) turnOn=true;
+                updateLED(i, turnOn);
             }
         }
 
@@ -560,28 +592,37 @@ public class TestRunActivity extends Activity implements customButtonListener {
         {
             this.phidget = phidget;
             this.attach = attach;
+            Integer sensorChangeTrigger = resources.getInteger(R.integer.PHIDGET_SENSOR_CHANGE_TRIGGER);
+            Integer dataRate = resources.getInteger(R.integer.PHIDGET_DATA_RATE);
+            Boolean ratioMetric = resources.getBoolean(R.bool.PHIDGET_RATIO_METRIC);
+
+            try {
+                if (phidget.isAttached()) {
+                    if (phidget==rack.phidgets[0].phidget) {
+                        for (int i = 0; i < 8; i++) {
+                            rack.phidgets[0].phidget.setDataRate(i, dataRate);
+                            rack.phidgets[0].phidget.setSensorChangeTrigger(i, sensorChangeTrigger);
+                        }
+                        rack.phidgets[0].phidget.setRatiometric(false);
+                    } else if (phidget==rack.phidgets[1].phidget) {
+                        for (int i = 0; i < 8; i++) {
+                            rack.phidgets[1].phidget.setDataRate(i, dataRate);
+                            rack.phidgets[1].phidget.setSensorChangeTrigger(i, sensorChangeTrigger);
+                        }
+                        rack.phidgets[1].phidget.setRatiometric(false);
+                    } else if (phidget==rack.phidgets[2].phidget) {
+                        for (int i = 0; i < 8; i++) {
+                            rack.phidgets[2].phidget.setDataRate(i, dataRate);
+                            rack.phidgets[2].phidget.setSensorChangeTrigger(i, sensorChangeTrigger);
+                        }
+                        rack.phidgets[2].phidget.setRatiometric(ratioMetric);
+                    }
+                }
+            } catch (PhidgetException pe) {
+                pe.printStackTrace();
+            }
         }
         public void run() {
-/*            TextView attachedTxt = (TextView) findViewById(R.id.attachedTxt);
-            if(attach)
-            {
-                attachedTxt.setText("Attached");
-                try {
-                    TextView nameTxt = (TextView) findViewById(R.id.nameTxt);
-                    TextView serialTxt = (TextView) findViewById(R.id.serialTxt);
-                    TextView versionTxt = (TextView) findViewById(R.id.versionTxt);
-
-                    nameTxt.setText(phidget.getDeviceName());
-                    serialTxt.setText(Integer.toString(phidget.getSerialNumber()));
-                    versionTxt.setText(Integer.toString(phidget.getDeviceVersion()));
-
-                } catch (PhidgetException e) {
-                    e.printStackTrace();
-                }
-            }
-            else
-                attachedTxt.setText("Detached");*/
-            //notify that we're done
             synchronized(this)
             {
                 this.notify();
@@ -601,7 +642,10 @@ public class TestRunActivity extends Activity implements customButtonListener {
         public void run() {
             // Put the value from the phidget into the
             Integer bayValue = (phidgetNumber*8)+sensorIndex;
-            Integer updatedValue = sensorVal + rack.bays[bayValue].calibrationOffset;
+            Integer updatedValue=0;
+            if (rack.bays!=null) {
+                updatedValue = sensorVal + rack.bays[bayValue].calibrationOffset;
+            }
             Boolean refreshScreen = testRun.bayItems[bayValue].updateValue(updatedValue,testRun.currentTestStep);
             aa.notifyDataSetChanged();
             if (refreshScreen) {
@@ -647,12 +691,28 @@ public class TestRunActivity extends Activity implements customButtonListener {
         }
     }
 
+    private void updateLED (Integer bayNumber, Boolean turnOn) {
+        // This function figures out the correct phidget and offset, then sets the toggle value
+        Integer phidgetOffset = bayNumber/8;
+        Integer phidgetSensorNumber = bayNumber - phidgetOffset*8;
+
+        Phidget thisPhidget= rack.phidgets[phidgetOffset].phidget;
+
+        try {
+            if(thisPhidget.isAttached()){
+                // Perform action on clicks, depending on whether it's now checked
+                rack.phidgets[phidgetOffset].phidget.setOutputState(phidgetSensorNumber,turnOn);
+            }
+        } catch (PhidgetException e) {
+            e.printStackTrace();
+        }
+    }
+
     private class loadDBValues extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... urls) {
             Integer currentRack=sharedPreferences.getInt(MainActivity.TAG_RACK_NUMBER,1);
             rack = new Rack(currentRack,MainActivity.dbServerAddress);
-
             return urls[0];
         }
         @Override
@@ -744,6 +804,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
             } catch (PhidgetException pe) {
                 pe.printStackTrace();
             }
+            updateCounts();
             updateView();
         }
     }

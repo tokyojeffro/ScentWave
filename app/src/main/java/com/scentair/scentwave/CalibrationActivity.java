@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -14,7 +15,6 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import com.phidgets.InterfaceKitPhidget;
 import com.phidgets.Manager;
 import com.phidgets.Phidget;
@@ -40,6 +40,8 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
     private SharedPreferences.Editor editor;
     private Integer currentRack;
     public Vector<InterfaceKitPhidget> phidgets;
+    private Resources resources;
+    private Integer numberOfRacks;
 
     /**
      * Called when the activity is first created.
@@ -65,6 +67,9 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
         footerView =  ((LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.calibration_footer, null, false);
         listView.addFooterView(footerView);
 
+        resources = getResources();
+        numberOfRacks = resources.getInteger(R.integer.NUMBER_OF_RACKS);
+
         //Crank up the async process to load the rack values from the DB
         new loadDBValues().execute("http://this string argument does nothing");
 
@@ -75,12 +80,8 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
         toggleRackButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-                if (currentRack == 1) {
-                    currentRack = 2;
-                } else {
-                    currentRack = 1;
-                }
+                currentRack++;
+                if (currentRack>numberOfRacks) currentRack=1;
                 // Save in NVM
                 editor.putInt(MainActivity.TAG_RACK_NUMBER, currentRack);
                 editor.commit();
@@ -92,7 +93,7 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
         phidget1Field.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                updatePhidget1(v);
+                updatePhidget1();
             }
         });
 
@@ -100,7 +101,7 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
         phidget2Field.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                updatePhidget2(v);
+                updatePhidget2();
             }
         });
 
@@ -108,7 +109,7 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
         phidget3Field.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                updatePhidget3(v);
+                updatePhidget3();
             }
         });
 
@@ -205,21 +206,23 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
         } catch (PhidgetException pe) {
             pe.printStackTrace();
         }
+        // Turn on the led for each active bay. turn it off for inactive bays
+        for (int i=0;i<rack.numberOfBays;i++) {
+            updateLED(i, rack.bays[i].active);
+        }
         aa.notifyDataSetChanged();
     }
 
     private void saveAndExit() {
         new saveDBValues().execute("http://this is a test");
-
         // Clear out any saved test runs because you can't reconcile the lists across bays.
         editor.putString(TestRunActivity.TAG_SAVED_TEST_RUN,"");
         editor.putBoolean(MainActivity.TAG_RESUME_AVAILABLE, false);
         editor.commit();
-
         finish();
     }
 
-    private void updatePhidget1(View v) {
+    private void updatePhidget1() {
         LayoutInflater inflater= getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.phidget_list,null);
 
@@ -254,7 +257,7 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
                 .show();
     }
 
-    private void updatePhidget2(View v) {
+    private void updatePhidget2() {
         LayoutInflater inflater= getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.phidget_list,null);
 
@@ -289,7 +292,7 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
                 .show();
     }
 
-    private void updatePhidget3(View v) {
+    private void updatePhidget3() {
         LayoutInflater inflater= getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.phidget_list,null);
 
@@ -327,10 +330,37 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
     class AttachDetachRunnable implements Runnable {
         Phidget phidget;
         boolean attach;
-
         public AttachDetachRunnable(Phidget phidget, boolean attach) {
             this.phidget = phidget;
             this.attach = attach;
+            Integer sensorChangeTrigger = resources.getInteger(R.integer.PHIDGET_SENSOR_CHANGE_TRIGGER);
+            Integer dataRate = resources.getInteger(R.integer.PHIDGET_DATA_RATE);
+            Boolean ratioMetric = resources.getBoolean(R.bool.PHIDGET_RATIO_METRIC);
+            try {
+                if (phidget.isAttached()) {
+                    if (phidget==rack.phidgets[0].phidget) {
+                        for (int i = 0; i < 8; i++) {
+                            rack.phidgets[0].phidget.setDataRate(i, dataRate);
+                            rack.phidgets[0].phidget.setSensorChangeTrigger(i, sensorChangeTrigger);
+                        }
+                        rack.phidgets[0].phidget.setRatiometric(false);
+                    } else if (phidget==rack.phidgets[1].phidget) {
+                        for (int i = 0; i < 8; i++) {
+                            rack.phidgets[1].phidget.setDataRate(i, dataRate);
+                            rack.phidgets[1].phidget.setSensorChangeTrigger(i, sensorChangeTrigger);
+                        }
+                        rack.phidgets[1].phidget.setRatiometric(false);
+                    } else if (phidget==rack.phidgets[2].phidget) {
+                        for (int i = 0; i < 8; i++) {
+                            rack.phidgets[2].phidget.setDataRate(i, dataRate);
+                            rack.phidgets[2].phidget.setSensorChangeTrigger(i, sensorChangeTrigger);
+                        }
+                        rack.phidgets[2].phidget.setRatiometric(ratioMetric);
+                    }
+                }
+            } catch (PhidgetException pe) {
+                pe.printStackTrace();
+            }
         }
         public void run() {
             //notify that we're done
@@ -356,6 +386,21 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
         }
     }
 
+    private void updateLED (Integer bayNumber, Boolean turnOn) {
+        // This function figures out the correct phidget and offset, then sets the toggle value
+        Integer phidgetOffset = bayNumber/8;
+        Integer phidgetSensorNumber = bayNumber - phidgetOffset*8;
+        Phidget thisPhidget= rack.phidgets[phidgetOffset].phidget;
+        try {
+            if(thisPhidget.isAttached()){
+                // Perform action on clicks, depending on whether it's now checked
+                rack.phidgets[phidgetOffset].phidget.setOutputState(phidgetSensorNumber,turnOn);
+            }
+        } catch (PhidgetException e) {
+            e.printStackTrace();
+        }
+    }
+
     private class saveDBValues extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... urls) {
@@ -373,7 +418,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
         protected String doInBackground(String... urls) {
             Integer currentRack=sharedPreferences.getInt(MainActivity.TAG_RACK_NUMBER,1);
             rack = new Rack(currentRack,MainActivity.dbServerAddress);
-
             return urls[0];
         }
         @Override

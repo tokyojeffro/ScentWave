@@ -19,7 +19,7 @@ public class Rack {
     public Phidget[] phidgets;
     public Bay[] bays;
     public final Integer numberOfBays=24;
-    public final Integer numberOfPhidgetsPerRack=numberOfBays/8;
+    public final Integer numberOfPhidgetsPerRack=3;
 
     private static final String TAG_RACK_NUMBER = "rackNumber";
     private static final String TAG_PHIDGET_RACK_NUMBER = "rackNumber";
@@ -32,36 +32,29 @@ public class Rack {
 
     public Rack (Integer number, String serverAddress) {
         this.number = number;
-
         JSONArray json_operators;
-
         phidgets = new Phidget[numberOfPhidgetsPerRack];
         for (int i=0;i<numberOfPhidgetsPerRack;i++) {
             Phidget phidget = new Phidget(this.number);
             phidgets[i]= phidget;
         }
         bays = new Bay[numberOfBays];
-
         // Get the JSON for the assigned rack
         String url = "http://" + serverAddress + "/dbtest.php/rackbays";
         JSONParser jParser = new JSONParser();
         json_operators = jParser.getJSONFromUrl(url);
-
         try {
             // looping through all operators
             for (int i = 0; i < json_operators.length();i++)
             {
                 JSONObject q = json_operators.getJSONObject(i);
-
                 Boolean bayStatus = false;
                 Integer tempInt = q.getInt(TAG_BAY_STATUS);
                 if (tempInt!=0) bayStatus=true;
-
                 Integer offset = q.getInt(TAG_CALIBRATION_OFFSET);
                 Integer bayNumber = q.getInt(TAG_BAY_NUMBER);
                 Integer rackNumber = q.getInt(TAG_RACK_NUMBER);
                 Integer id = q.getInt(TAG_PHIDGET_ID);
-
                 // Only save the info related to this bay from the table.
                 if (rackNumber.equals(this.number)) {
                     Bay newBay = new Bay(this.number, bayNumber, bayStatus, offset, id);
@@ -72,14 +65,10 @@ public class Rack {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
         // Get the JSON for the assigned rack
         url = "http://" + serverAddress + "/dbtest.php/rackphidgets";
-
         jParser = new JSONParser();
-
         json_operators = jParser.getJSONFromUrl(url);
-
         try {
             // looping through all operators
             for (int i = 0; i < json_operators.length(); i++)
@@ -108,33 +97,22 @@ public class Rack {
 
     public Integer getActiveBays() {
         Integer activeBays = 0;
-
         for (int i=0; i<bays.length; i++) {
             if (bays[i].active) activeBays++;
         }
         return activeBays;
     }
 
-    public Rack getRack() {
-        return this;
-    }
-
     public void updateCalibrationTables (String serverAddress) {
-        InputStream inputStream = null;
+        InputStream inputStream;
         DefaultHttpClient httpClient = new DefaultHttpClient();
         String url = "http://" + serverAddress + "/dbtest.php/rackphidgets";
-
         HttpPost httpPostReq = new HttpPost(url);
-
         httpPostReq.setHeader("Accept", "application/json");
         httpPostReq.setHeader("Content-type","application/json");
-
         Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
-
         String jsonOutput=gson.toJson(this.phidgets);
-
         StringEntity se;
-
         try {
             se = new StringEntity(jsonOutput);
             se.setContentType("application/json;charset=UTF-8");
@@ -149,19 +127,13 @@ public class Rack {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         httpClient = new DefaultHttpClient();
         url = "http://" + serverAddress + "/dbtest.php/rackbays";
-
         httpPostReq = new HttpPost(url);
-
         httpPostReq.setHeader("Accept", "application/json");
         httpPostReq.setHeader("Content-type","application/json");
-
         gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
-
         jsonOutput=gson.toJson(this.bays);
-
         try {
             se = new StringEntity(jsonOutput);
             se.setContentType("application/json;charset=UTF-8");

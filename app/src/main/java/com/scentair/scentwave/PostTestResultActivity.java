@@ -84,7 +84,7 @@ public class PostTestResultActivity extends Activity {
     private class saveTestResults extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... urls) {
-            testRun.saveTestResults(MainActivity.dbServerAddress,numberOfBays);
+            testRun.saveTestResults(MainActivity.dbServerAddress);
 
             return urls[0];
         }

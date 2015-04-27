@@ -1,7 +1,5 @@
 package com.scentair.scentwave;
 
-import android.support.annotation.NonNull;
-
 import java.util.*;
 
 public class MachineStates{
@@ -20,8 +18,8 @@ public class MachineStates{
 
         StateRange initRange= new StateRange();
         // Recalibrate range
-        initRange.min=-9999;
-        initRange.max=-1;
+        initRange.min=-999;
+        initRange.max=-6;
         initRange.state="Recalibrate";
 
         for (int i=initRange.min;i<=initRange.max;i++) {
@@ -29,7 +27,7 @@ public class MachineStates{
         }
 
         // Unplugged range
-        initRange.min=0;
+        initRange.min=-5;
         initRange.max=9;
         initRange.state="Unplugged";
 
@@ -37,17 +35,8 @@ public class MachineStates{
             stateMap.put(i,initRange.state);
         }
 
-        //OffPlugged range
-        initRange.min=10;
-        initRange.max=19;
-        initRange.state="Off";
-
-        for (int i=initRange.min;i<=initRange.max;i++) {
-            stateMap.put(i,initRange.state);
-        }
-
         //Machine On, Backlight Off, Fan Off range
-        initRange.min=20;
+        initRange.min=10;
         initRange.max=29;
         initRange.state="BackLight Off";
 
@@ -100,9 +89,18 @@ public class MachineStates{
             stateMap.put(i,initRange.state);
         }
 
-        //Fan high range
+        //Fan medium to high range
         initRange.min=351;
-        initRange.max=600;
+        initRange.max=400;
+        initRange.state="Medium to High";
+
+        for (int i=initRange.min;i<=initRange.max;i++) {
+            stateMap.put(i,initRange.state);
+        }
+
+        //Fan high range
+        initRange.min=401;
+        initRange.max=579;
         initRange.state="High";
 
         for (int i=initRange.min;i<=initRange.max;i++) {
@@ -110,22 +108,23 @@ public class MachineStates{
         }
 
         //Fan spike range
-        initRange.min=601;
-        initRange.max=650;
-        initRange.state="Fan Power Spike";
+        initRange.min=580;
+        initRange.max=999;
+        initRange.state="Fan OverLoad";
 
         for (int i=initRange.min;i<=initRange.max;i++) {
             stateMap.put(i,initRange.state);
         }
 
-        //Fan power error range
-        initRange.min=651;
-        initRange.max=1000;
-        initRange.state="Fan Power Error";
+        //Fan spike range
+        initRange.min=1000;
+        initRange.max=1500;
+        initRange.state="Error";
 
         for (int i=initRange.min;i<=initRange.max;i++) {
             stateMap.put(i,initRange.state);
         }
+
     }
 
     public String getState (int currentValue) {

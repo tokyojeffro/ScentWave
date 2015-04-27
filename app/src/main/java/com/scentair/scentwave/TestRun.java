@@ -1,7 +1,6 @@
 package com.scentair.scentwave;
 
 import android.util.Log;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.http.HttpResponse;
@@ -19,11 +18,9 @@ import java.util.*;
 
 public class TestRun{
     public Integer overallUnitsFailed=0;
-
     public Integer currentStepUnitsTested=0;
     public Integer currentStepUnitsPassed=0;
     public Integer currentStepUnitsFailed=0;
-
     public Integer currentTestStep=1;
     public Integer currentBay=0;
     public Integer maxTestSteps;
@@ -34,25 +31,19 @@ public class TestRun{
     // Constructor to generate a new test run
     public TestRun(String operator, Rack rack, Integer numTestSteps){
         this.maxTestSteps=numTestSteps;
-        overallUnitsFailed = 0;
-
+        this.overallUnitsFailed = 0;
         this.numberOfActiveBays=rack.getActiveBays();
-
         this.testResult = new TestResult(operator, rack.number, this.numberOfActiveBays, numTestSteps);
-
         // Need to keep all bays included here, even though some may be inactive
-        bayItems = new BayItem[rack.numberOfBays];
-
+        this.bayItems = new BayItem[rack.numberOfBays];
         for(int i=0;i<rack.numberOfBays;i++){
             boolean status = rack.bays[i].active;
             bayItems[i]=new BayItem(i+1, status);
         }
-
         // The first step is to enter the barcodes.  Set the edit field
-        bayItems[0].isEditMitec=true;
-
+        this.bayItems[0].isEditMitec=true;
         // Set the start time for the first test step
-        testResult.setStartTime(0);
+        this.testResult.setStartTime(0);
     }
 
     // Empty constructor for reconstitution after resume
@@ -71,7 +62,6 @@ public class TestRun{
             if (bayItems[returnValue].isActive) activeFound=true;
             else returnValue++;
         }
-
         if (!activeFound) {
             // There were no more active bays left
             // Return 24 to move to bottom of list
@@ -82,16 +72,13 @@ public class TestRun{
     public Integer setNextBarcodeEditField () {
         Integer targetBay = -1;
         // Look at the data and figure out where to put the cursor for barcode entry
-
         // First, check the field we are starting on.  Is is active and does it have both barcode values already?
         // If not, then we stay there.
-
         // Need to go through the active list looking for the next target field
         // Should clear each field before setting the target
         for (int i=0;i<bayItems.length;i++) {
             bayItems[i].isEditScentair = false;
             bayItems[i].isEditMitec = false;
-
             // If the bay is active and we have not found the target bay yet, then check the fields
             if ((bayItems[i].isActive && targetBay.equals(-1))) {
                 if (bayItems[i].mitecBarcode.equals("")) {
@@ -140,7 +127,6 @@ public class TestRun{
         }
         testResult.numberOfUnitsFailed = overallUnitsFailed + currentStepUnitsFailed;
         testResult.numberOfUnitsPassed = numberOfActiveBays - testResult.numberOfUnitsFailed;
-
         if (testResult.numberOfUnitsFailed>=numberOfActiveBays) {
             // Special case where all units have failed in this run
             // Set up the data structure for export by filling in the necessary blanks
@@ -149,7 +135,6 @@ public class TestRun{
                 testResult.setEndTime(i);
             }
         }
-
         // This structure is necessary for serialization and output to the database
         testResult.step1Start = testResult.stepStartTimes[0];
         testResult.step2Start = testResult.stepStartTimes[1];
@@ -163,22 +148,18 @@ public class TestRun{
         testResult.step5Stop = testResult.stepEndTimes[4];
     }
 
-    public void saveTestResults (String serverAddress, Integer numberOfBays) {
+    public void saveTestResults (String serverAddress) {
         DefaultHttpClient httpClient = new DefaultHttpClient();
-
         // First step, save the new units in their table
         String url = "http://" + serverAddress + "/dbtest.php/testresults";
-
         HttpPost httpPostReq = new HttpPost(url);
         httpPostReq.setHeader("Accept", "application/json");
         httpPostReq.setHeader("Content-type","application/json");
-
         Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
         String jsonOutput=gson.toJson(this.testResult);
         StringEntity se;
         String httpResponseText="";
         Integer testRunId = 0;
-
         try {
             se = new StringEntity(jsonOutput);
             se.setContentType("application/json;charset=UTF-8");
@@ -219,25 +200,19 @@ public class TestRun{
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         // Now add the units to the database with a JSON POST
         httpClient = new DefaultHttpClient();
         // This is the url to update the 1004 unit table
         url = "http://" + serverAddress + "/dbtest.php/sw1004units";
-
         gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
-
         // Need to get the unit info into JSON format
         Unit newUnits[] = new Unit[testResult.unitTests.size()];
         for (int i=0;i<testResult.unitTests.size();i++)
             newUnits[i] = testResult.unitTests.get(i).unit;
         jsonOutput=gson.toJson(newUnits);
-
         httpPostReq = new HttpPost(url);
-
         httpPostReq.setHeader("Accept", "application/json");
         httpPostReq.setHeader("Content-type","application/json");
-
         try {
             se = new StringEntity(jsonOutput);
             se.setContentType("application/json;charset=UTF-8");
@@ -283,25 +258,18 @@ public class TestRun{
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         // Finally, add the units to the unit test table.
         // It joins the Unit IDs with the Test Run Ids and stores
         // the test run specific data.
-
         httpClient = new DefaultHttpClient();
         // This is the url to update the 1004 unit table
         url = "http://" + serverAddress + "/dbtest.php/unittests";
         // Generate the proper data
-
         gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
-
         jsonOutput=gson.toJson(testResult.unitTests);
-
         httpPostReq = new HttpPost(url);
-
         httpPostReq.setHeader("Accept", "application/json");
         httpPostReq.setHeader("Content-type","application/json");
-
         try {
             se = new StringEntity(jsonOutput);
             se.setContentType("application/json;charset=UTF-8");
@@ -359,22 +327,16 @@ public class TestRun{
             DatabaseLinkRecord newRecord = new DatabaseLinkRecord(testRunId,unitTestId,unitId);
             linkRecords.add(newRecord);
         }
-
         // Now, output to the database
         httpClient = new DefaultHttpClient();
         // This is the url to update the 1004 unit table
         url = "http://" + serverAddress + "/dbtest.php/testruns_unittests";
         // Generate the proper data
-
         gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
-
         jsonOutput=gson.toJson(linkRecords);
-
         httpPostReq = new HttpPost(url);
-
         httpPostReq.setHeader("Accept", "application/json");
         httpPostReq.setHeader("Content-type","application/json");
-
         try {
             se = new StringEntity(jsonOutput);
             se.setContentType("application/json;charset=UTF-8");

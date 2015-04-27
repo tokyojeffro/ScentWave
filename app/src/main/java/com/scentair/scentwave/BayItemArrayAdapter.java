@@ -132,10 +132,8 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
                 //Make sure the button text is set back to default
                 holder.failButton.setText("Fail");
                 holder.failButton.setBackgroundColor(Color.parseColor("#FF4444"));
-
                 String returnValue = testRun.bayItems[position].isPassReady(testRun.currentTestStep);
                 holder.passButton.setText(returnValue);
-
                 switch (returnValue) {
                     case "Pass":
                         // The criteria for pass are met, enable the button and set the color to green
@@ -210,19 +208,16 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
         holder.passButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String bayStatus = testRun.bayItems[position].isPassReady(testRun.currentTestStep);
                 // Only enable the pass button if the criteria have been met.
-                if (bayStatus.equals("Pass")) {
-                    View parentRow = (View) v.getParent();
-                    View grandParent = (View) parentRow.getParent();
-                    View greatGrantParent = (View) grandParent.getParent();
-                    View greatGreatGrandParent = (View) greatGrantParent.getParent();
+                View parentRow = (View) v.getParent();
+                View grandParent = (View) parentRow.getParent();
+                View greatGrandParent = (View) grandParent.getParent();
+                View greatGreatGrandParent = (View) greatGrandParent.getParent();
 
-                    ListView listView = (ListView) greatGreatGrandParent.getParent();
-                    final int listViewPosition = listView.getPositionForView(parentRow);
-                    if (customListener != null) {
-                        customListener.onPassButtonClickListener(position, listViewPosition);
-                    }
+                ListView listView = (ListView) greatGreatGrandParent.getParent();
+                final int listViewPosition = listView.getPositionForView(parentRow);
+                if (customListener != null) {
+                    customListener.onPassButtonClickListener(position, listViewPosition);
                 }
             }
         });
@@ -232,8 +227,8 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
             public void onClick(View v) {
                 View parentRow = (View) v.getParent();
                 View grandParent = (View) parentRow.getParent();
-                View greatGrantParent = (View) grandParent.getParent();
-                View greatGreatGrandParent = (View) greatGrantParent.getParent();
+                View greatGrandParent = (View) grandParent.getParent();
+                View greatGreatGrandParent = (View) greatGrandParent.getParent();
 
                 ListView listView = (ListView) greatGreatGrandParent.getParent();
                 final int listViewPosition = listView.getPositionForView(parentRow);

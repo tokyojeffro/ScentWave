@@ -82,5 +82,16 @@
             android:layout_below="@id/StartTestButton"
             android:visibility="invisible"
             />
+        <TextView
+            android:id="@+id/db_load_error"
+            android:layout_width="300dp"
+            android:layout_height="100dp"
+            android:text="Database not found.  Recalibration required."
+            android:background="@android:color/holo_red_light"
+            android:layout_below="@id/ResumeTestButton"
+            android:layout_gravity="center_horizontal"
+            android:textSize="30dp"
+            android:visibility="invisible"
+            />
     </RelativeLayout>
 </RelativeLayout>
