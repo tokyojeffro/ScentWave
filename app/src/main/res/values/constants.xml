@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="NUMBER_OF_BAYS_PER_RACK">24</integer>
+    <integer name="NUMBER_OF_RACKS">2</integer>
+    <integer name="PHIDGET_DATA_RATE">320</integer>
+    <integer name="PHIDGET_SENSOR_CHANGE_TRIGGER">0</integer>
+    <boolean name="PHIDGET_RATIO_METRIC">false</boolean>
+</resources>
