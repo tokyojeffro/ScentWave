@@ -163,6 +163,35 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 break;
             case "Pass":
             case "Not Tested":
+                if (testRun.currentTestStep.equals(3)) {
+                    // This is a special case.  Requires a dialog popup to pick a value for the fan
+                    // noted visually by the operator
+                    LayoutInflater inflater = getLayoutInflater();
+                    View dialogView = inflater.inflate(R.layout.fanspeedpopup, null);
+
+                    final CharSequence[] popUpSpeedStrings = new CharSequence[popUpSpeeds.length];
+
+                    for (int i = 0; i < popUpSpeeds.length; i++) {
+                        Integer popUpSpeed = popUpSpeeds[i];
+                        popUpSpeedStrings[i] = popUpSpeed.toString();
+                    }
+
+                    final int bayPosition = position;
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                    builder.setTitle("Fan Display Value")
+                            .setItems(popUpSpeedStrings, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    //Load the proper failure reason into the failure field
+                                    testRun.bayItems[bayPosition].fanMedDisplayValue = popUpSpeedStrings[which].toString();
+                                    aa.notifyDataSetChanged();
+                                }
+                            })
+                            .setView(dialogView)
+                            .show();
+
+                }
+                listView.smoothScrollToPosition(position+2);
                 // Check the status of the bay.  Is it pass ready?
                 if (passStatus.equals("Pass")|| (passStatus.equals("Passed"))) {
                     // They have pressed the pass button, the bay thinks it is pass ready.  Pass it.

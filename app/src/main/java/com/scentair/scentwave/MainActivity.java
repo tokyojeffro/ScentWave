@@ -8,6 +8,7 @@ import android.content.*;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.crittercism.app.Crittercism;
 
 public class MainActivity extends Activity {
 
@@ -39,6 +40,8 @@ public class MainActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        Crittercism.initialize(getApplicationContext(),"553f93548172e25e67906ac8");
         setContentView(R.layout.main);
 
         sharedPreferences=getSharedPreferences(TAG_MYPREFS, Context.MODE_PRIVATE);

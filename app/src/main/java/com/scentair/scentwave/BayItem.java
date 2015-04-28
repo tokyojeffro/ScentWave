@@ -21,14 +21,16 @@ public class BayItem{
     public Boolean isEditScentair;
     public Boolean isActive;
     public Integer lowValue = 0;
+    private Date lowValueTimestamp;
     public Integer medValue = 0;
+    private Date medValueTimestamp;
     public Integer highValue = 0;
+    private Date highValueTimestamp;
     public String fanMedDisplayValue;
     public Boolean cycleTestComplete=false;
     public Date lastOffTime;
     private String oldUnitState;
     public String lcdState;
-    private Date lastValueUpdateTime;
     private Integer oldCurrentValue;
 
     //Constructor used for beginning a test run
@@ -119,51 +121,82 @@ public class BayItem{
         oldUnitState = unitState;
         Boolean refreshScreen = false;
         Date newValueUpdateTime = new Date();
-
         if (isActive && !isFailed) {
             // Only process this if the bay is active in calibration and have not already failed
             // Check to see if our new value has triggered a state change.
             unitState = TestRunActivity.machineStates.getState(newValue);
-
-            // If we are in test step number 3, then start looking for the proper fan values
             // If we are in test step number 3, then start looking for the proper fan values
             if (testStepNumber.equals(3)) {
-                if (!unitState.equals(oldUnitState)) {
-                    // Save off the new oldUnitState and set the timestamp
-                    oldUnitState = unitState;
-                    lastValueUpdateTime = new Date();
-                } else {
-                    // Now check the timestamp delta
-                    // If we have been in the same unitState for more than 2 seconds, we can save
-                    // off the values and trigger pass for this piece of this test step.
-
-                    // Check to see if we already have an update timestamp for the first value
-                    if (lowValue.equals(0) || medValue.equals(0) || highValue.equals(0)) {
-                        if (lastValueUpdateTime != null) {
-                            Long difference = newValueUpdateTime.getTime() - lastValueUpdateTime.getTime();
-                            // The difference is in milliseconds.
-                            Integer fanWaitMillis = 1000*2;
-
-                            if (difference > fanWaitMillis) {
-                                // This switch saves off the representative values for the fan at each state
-                                switch (unitState) {
-                                    case "Unplugged":
-                                        break;
-                                    case "Low":
-                                        lowValue = oldCurrentValue;
-                                        break;
-                                    case "Medium":
-                                        medValue = oldCurrentValue;
-                                        break;
-                                    case "High":
-                                        highValue = oldCurrentValue;
-                                        break;
-                                }
+                if (oldUnitState!=unitState) {
+                    // We have made a large shift.  Reset all timers so we wash out any old pass thru values
+                    lowValueTimestamp=null;
+                    medValueTimestamp=null;
+                    highValueTimestamp=null;
+                }
+                switch (oldUnitState) {
+                    // Update the stored trigger values based on the old state.
+                    case "Unplugged":
+                        break;
+                    case "Low":
+                        if (lowValueTimestamp==null) {
+                            // Get the first timestamp for Low
+                            lowValueTimestamp = new Date();
+                        } else {
+                            // If it isn't the first time through, check the time we have been on this value
+                            Long difference = newValueUpdateTime.getTime() - lowValueTimestamp.getTime();
+                            if (difference>1000*2) {
+                                // If this low value has been active for 2 seconds or more
+                                // save the last value stored
+                                lowValue = oldCurrentValue;
+                                lowValueTimestamp=null;
+                                refreshScreen=true;
+                            } else {
+                                // Reset the timestamp
+                                lowValueTimestamp = new Date();
                             }
-                        } else lastValueUpdateTime = newValueUpdateTime;
-                    }
+                        }
+                        break;
+                    case "Medium":
+                        if (medValueTimestamp==null) {
+                            // Get the first timestamp for Low
+                            medValueTimestamp = new Date();
+                        } else {
+                            // If it isn't the first time through, check the time we have been on this value
+                            Long difference = newValueUpdateTime.getTime() - medValueTimestamp.getTime();
+                            if (difference>1000*2) {
+                                // If this low value has been active for 2 seconds or more
+                                // save the last value stored
+                                medValue = oldCurrentValue;
+                                medValueTimestamp=null;
+                                refreshScreen=true;
+                            } else {
+                                // Reset the timestamp
+                                medValueTimestamp = new Date();
+                            }
+                        }
+                        break;
+                    case "High":
+                        if (highValueTimestamp==null) {
+                            // Get the first timestamp for Low
+                            highValueTimestamp = new Date();
+                        } else {
+                            // If it isn't the first time through, check the time we have been on this value
+                            Long difference = newValueUpdateTime.getTime() - highValueTimestamp.getTime();
+                            if (difference>1000*2) {
+                                // If this low value has been active for 2 seconds or more
+                                // save the last value stored
+                                highValue = oldCurrentValue;
+                                highValueTimestamp=null;
+                                refreshScreen=true;
+                            } else {
+                                // Reset the timestamp
+                                highValueTimestamp = new Date();
+                            }
+                        }
+                        break;
                 }
             }
+
             // Check to see if the cycle timer has already passed
             // If so, ignore this
             if (!cycleTestComplete) {
