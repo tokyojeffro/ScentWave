@@ -225,6 +225,11 @@ public class TestRunActivity extends Activity implements customButtonListener {
             // Toggle back to normal state
             testRun.bayItems[position].stepStatus = "Not Tested";
             testRun.bayItems[position].lcdState = "ON";
+            if (testRun.currentTestStep.equals(1)) {
+                // make sure both barcodes are cleared so they can be reset
+                testRun.bayItems[position].mitecBarcode="";
+                testRun.bayItems[position].scentairBarcode="";
+            }
         } else {
         // Here we need an AlertDialog that provides a list of potential failure reasons
             TestStep testStep = testSteps.get(testRun.currentTestStep-1);
@@ -695,6 +700,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
             // Clear the field for re-entry
             testRun.bayItems[position].mitecBarcode = "";
             testRun.bayItems[position].isEditMitec = true;
+            testRun.bayItems[position].stepStatus="Not Tested";
             aa.notifyDataSetChanged();
         }
     }
@@ -707,15 +713,10 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 testRun.bayItems[i].isEditScentair = false;
                 testRun.bayItems[i].isEditMitec = false;
             }
-
             // Check to see if something else was entered.  If so, clear it
             testRun.bayItems[position].scentairBarcode = "";
             testRun.bayItems[position].isEditScentair = true;
-
-            aa.notifyDataSetChanged();
-            // Clear the field for re-entry
-            testRun.bayItems[position].mitecBarcode = "";
-            testRun.bayItems[position].isEditMitec = true;
+            testRun.bayItems[position].stepStatus="Not Tested";
             aa.notifyDataSetChanged();
         }
     }

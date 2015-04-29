@@ -2,11 +2,9 @@ package com.scentair.scentwave;
 
 import com.google.gson.annotations.Expose;
 
-import java.util.*;
-
 public class UnitTest {
     // The Unit is not a part of the JSON construction because it must be handled separately
-    public Unit unit;
+    public SW1004Unit unit;
 
     // The rest of these are part of the JSON output
     @Expose public Boolean passed;
@@ -20,7 +18,7 @@ public class UnitTest {
     // This is not exposed because we never write the ID out
     public Integer unitTestId;
 
-    public UnitTest(Unit unit,
+    public UnitTest(SW1004Unit unit,
                     Boolean passed,
                     Integer bayNum,
                     String fanMediumDisplayValue,

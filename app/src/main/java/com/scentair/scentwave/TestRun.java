@@ -103,7 +103,7 @@ public class TestRun{
                 BayItem bayItem = bayItems[i];
 
                 // Create a new Unit with the barcode info
-                Unit newUnit = new Unit (
+                SW1004Unit newUnit = new SW1004Unit(
                         bayItem.mitecBarcode,
                         bayItem.scentairBarcode
                 );
@@ -206,7 +206,7 @@ public class TestRun{
         url = "http://" + serverAddress + "/dbtest.php/sw1004units";
         gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
         // Need to get the unit info into JSON format
-        Unit newUnits[] = new Unit[testResult.unitTests.size()];
+        SW1004Unit newUnits[] = new SW1004Unit[testResult.unitTests.size()];
         for (int i=0;i<testResult.unitTests.size();i++)
             newUnits[i] = testResult.unitTests.get(i).unit;
         jsonOutput=gson.toJson(newUnits);
@@ -316,7 +316,7 @@ public class TestRun{
 
         // For the last step, write out the linking table records from the data we have parsed and stored
         // First, build the link record objects
-        ArrayList<DatabaseLinkRecord> linkRecords = new ArrayList<>();
+        ArrayList<DataLinkRecord> linkRecords = new ArrayList<>();
 
         // For each Unit Test, build a new link record
         Iterator<UnitTest> iterator = testResult.unitTests.iterator();
@@ -324,7 +324,7 @@ public class TestRun{
             UnitTest nextTest = iterator.next();
             Integer unitTestId = nextTest.unitTestId;
             Integer unitId = nextTest.unit.id;
-            DatabaseLinkRecord newRecord = new DatabaseLinkRecord(testRunId,unitTestId,unitId);
+            DataLinkRecord newRecord = new DataLinkRecord(testRunId,unitTestId,unitId);
             linkRecords.add(newRecord);
         }
         // Now, output to the database
