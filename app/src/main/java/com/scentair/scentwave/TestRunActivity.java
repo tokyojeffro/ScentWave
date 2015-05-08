@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.Locale;
 
 public class TestRunActivity extends Activity implements customButtonListener {
-
     public static final String TAG_SAVED_TEST_RUN="SAVED_TEST_RUN";
     private String phidgetServerAddress;
     private TestRun testRun;
@@ -53,8 +52,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
     private static int[] popUpSpeeds;
     private String lastScentairBarcode="";
     private String lastMitecBarcode="";
-
-
     // These are used to save the current state of the test run to prefs
     private String testRunSavedState;
     private Gson gson;
@@ -122,7 +119,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
         //Check to see if they are marking a previous failed unit as passed.
         //if so, clear the data and reset to untested.
         String passStatus = testRun.bayItems[position].isPassReady(testRun.currentTestStep);
-
         switch ( testRun.bayItems[position].stepStatus) {
             case "Failed":
                 // Clear the previous failure cause
@@ -146,7 +142,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
                         Integer popUpSpeed = popUpSpeeds[i];
                         popUpSpeedStrings[i] = popUpSpeed.toString();
                     }
-
                     final int bayPosition = position;
                     AlertDialog.Builder builder = new AlertDialog.Builder(this);
                     builder.setTitle("Fan Display Value")
@@ -173,12 +168,10 @@ public class TestRunActivity extends Activity implements customButtonListener {
                     View dialogView = inflater.inflate(R.layout.fanspeedpopup, null);
 
                     final CharSequence[] popUpSpeedStrings = new CharSequence[popUpSpeeds.length];
-
                     for (int i = 0; i < popUpSpeeds.length; i++) {
                         Integer popUpSpeed = popUpSpeeds[i];
                         popUpSpeedStrings[i] = popUpSpeed.toString();
                     }
-
                     final int bayPosition = position;
                     AlertDialog.Builder builder = new AlertDialog.Builder(this);
                     builder.setTitle("Fan Display Value")
@@ -192,7 +185,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
                             })
                             .setView(dialogView)
                             .show();
-
                 }
                 listView.smoothScrollToPosition(position+2);
                 // Check the status of the bay.  Is it pass ready?
@@ -276,7 +268,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
         testRun.bayItems[position].isEditScentair=false;
         String mitecCheckString = resources.getString(R.string.MITEC_BARCODE_CHECK);
         String scentairCheckString = resources.getString(R.string.SCENTAIR_BARCODE_CHECK);
-
         // First, check to see if the barcode is a valid scentair barcode
         if (candidateText.endsWith(scentairCheckString)) {
             // Now check to make sure they have not re-entered the same scentair barcode
@@ -437,7 +428,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
         if (testRun.currentTestStep>testRun.maxTestSteps)
         {
             // End of this run, report results.
-
             postTestResults();
             //close this activity
             finish();
@@ -447,7 +437,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
             returnValue=true;
             // Turn the bay lights back on
             for (int i=0;i<rack.numberOfBays;i++) {
-                if (testRun.bayItems[i].isActive) {
+                if (testRun.bayItems[i].isActive && !testRun.bayItems[i].isFailed) {
                     testRun.bayItems[i].lcdState="ON";
                     updateLED(i, true);
                 }
@@ -480,7 +470,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
         testRun.overallUnitsFailed=0;
         testRun.currentStepUnitsTested=0;
         showCompleteStepButton="";
-
         // update results totals
         for (int i=0;i<rack.numberOfBays;i++) {
             // Only need to consider active bays
@@ -508,9 +497,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 updateLED(i, turnOn);
             }
         }
-
         testRun.currentStepUnitsTested = testRun.currentStepUnitsFailed+testRun.currentStepUnitsPassed+testRun.overallUnitsFailed;
-
         if ((testRun.overallUnitsFailed>=testRun.numberOfActiveBays) ||
                 testRun.currentStepUnitsFailed>=testRun.numberOfActiveBays) {
             // This is a special case where all units have failed
@@ -537,32 +524,26 @@ public class TestRunActivity extends Activity implements customButtonListener {
             TextView currentStep = (TextView) findViewById(R.id.teststepnumber);
             String text = "Step " + testRun.currentTestStep.toString() + " of " + testRun.maxTestSteps.toString();
             currentStep.setText(text);
-
             //Load the current step start time
             TextView currentStepStartTime = (TextView) findViewById(R.id.start_time);
             SimpleDateFormat format = new SimpleDateFormat("yyyy MM dd hh:mm:ss", Locale.US);
             String dateToStr = format.format(testRun.testResult.getStartTime(testRun.currentTestStep - 1));
             currentStepStartTime.setText(dateToStr);
-
             //Get the current progress info loaded
             TextView currentProgress = (TextView) findViewById(R.id.test_step_progress);
             Integer baysRemaining = testRun.numberOfActiveBays - testRun.overallUnitsFailed;
             text = "Tested " + testRun.currentStepUnitsTested.toString() + "/" + baysRemaining.toString();
             currentProgress.setText(text);
-
             TextView activeBays = (TextView) findViewById(R.id.active_bays);
             text = testRun.numberOfActiveBays.toString();
             activeBays.setText(text);
-
             TextView skippedBaysView = (TextView) findViewById(R.id.skipped_bays);
             Integer skippedBays = testRun.overallUnitsFailed;
             text = skippedBays.toString();
             skippedBaysView.setText(text);
-
             TextView passedView = (TextView) findViewById(R.id.number_passed);
             text = testRun.currentStepUnitsPassed.toString();
             passedView.setText(text);
-
             TextView failedView = (TextView) findViewById(R.id.number_failed);
             text = testRun.currentStepUnitsFailed.toString();
             failedView.setText(text);
@@ -572,7 +553,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
             } else {
                 failedView.setBackgroundColor(Color.WHITE);
             }
-
             //Get the verify list loaded
             TextView verifyText = (TextView) findViewById(R.id.teststepverifylist);
             text = testStep.expectedResults;
@@ -580,14 +560,12 @@ public class TestRunActivity extends Activity implements customButtonListener {
             String newText = text.replaceAll("NEWLINE", newLine);
             verifyText.setSingleLine(false);
             verifyText.setText(newText);
-
             //Get the test step information from the Test Steps list
             TextView stepInfo = (TextView) findViewById(R.id.teststepinstruction);
             text = testStep.testSteps;
             newText = text.replaceAll("NEWLINE", newLine);
             stepInfo.setSingleLine(false);
             stepInfo.setText(newText);
-
             if (showCompleteStepButton.equals("SHOW")) {
                 // This step is finished
                 // Activate the button and set the color and text
@@ -615,7 +593,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
         // get test run state info translated to a string
         testRun.currentBay=testRun.currentStepUnitsTested;
         testRunSavedState = gson.toJson(testRun);
-
         //update NVM to save state and start on next step on restart/reboot
         editor.putBoolean(MainActivity.TAG_RESUME_AVAILABLE,true);
         editor.putString(TAG_SAVED_TEST_RUN,testRunSavedState);
@@ -625,17 +602,14 @@ public class TestRunActivity extends Activity implements customButtonListener {
     private void postTestResults() {
         //Calculate results
         testRun.calculateResults(rack);
-
         // We serialize the test run object to save it here via JSON
         // The run includes the results we just calculated
         testRunSavedState = gson.toJson(testRun);
-
         // Load up the intent with the data and crank up the new activity
         Intent newIntent = new Intent(context,PostTestResultActivity.class);
         newIntent.putExtra("TestRun",testRunSavedState);
         newIntent.putExtra("RackBays",rack.numberOfBays);
         startActivity(newIntent);
-
         finish();
     }
 
@@ -649,7 +623,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
             Integer sensorChangeTrigger = resources.getInteger(R.integer.PHIDGET_SENSOR_CHANGE_TRIGGER);
             Integer dataRate = resources.getInteger(R.integer.PHIDGET_DATA_RATE);
             Boolean ratioMetric = resources.getBoolean(R.bool.PHIDGET_RATIO_METRIC);
-
             try {
                 if (phidget.isAttached()) {
                     if (phidget==rack.phidgets[0].phidget) {
