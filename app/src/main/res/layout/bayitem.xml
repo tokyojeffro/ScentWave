@@ -72,7 +72,7 @@
                 >
                 <TextView
                     android:id="@+id/mitecbarcodelabel"
-                    android:text="Mitec Barcode:"
+                    android:text="Trio Barcode:"
                     android:layout_width="fill_parent"
                     android:layout_height="39dp"
                     android:background="@android:color/white"

@@ -31,6 +31,7 @@ public class MainActivity extends Activity {
     public static final String TAG_RACK_NUMBER = "RACK_NUMBER";
     public static final String TAG_DATABASE_SERVER_ADDRESS="DATABASE_SERVER_ADDRESS";
     public static final String TAG_PHIDGET_SERVER_ADDRESS="PHIDGET_SERVER_ADDRESS";
+    public static final String DEBUG_BARCODE_OVERRIDE="DEBUG_BARCODE_OVERRIDE";
 
     SharedPreferences sharedPreferences;
     public static String phidgetServerAddress;

@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -16,8 +17,10 @@ public class PreferencesActivity extends Activity {
     EditText dbEditText;
     EditText phidgetEditText;
 
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        CheckBox overrideBarcode;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.preferences);
 
@@ -30,6 +33,20 @@ public class PreferencesActivity extends Activity {
 
         dbEditText=(EditText) findViewById(R.id.database_server_address);
         phidgetEditText=(EditText) findViewById(R.id.phidget_server_address);
+
+        overrideBarcode = (CheckBox) findViewById(R.id.barcode_override);
+
+        overrideBarcode.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Boolean setOverride = false;
+                if (((CheckBox) v).isChecked()) {
+                    setOverride = true;
+                }
+                editor.putBoolean(MainActivity.DEBUG_BARCODE_OVERRIDE, setOverride);
+                editor.commit();
+            }
+        });
 
         saveButton=(Button) findViewById(R.id.save_prefs_button);
         cancelButton=(Button) findViewById(R.id.cancel_prefs_button);

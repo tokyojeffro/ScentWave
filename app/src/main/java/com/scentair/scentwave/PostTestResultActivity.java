@@ -1,7 +1,9 @@
 package com.scentair.scentwave;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
@@ -18,11 +20,14 @@ public class PostTestResultActivity extends Activity {
     private TestRun testRun;
     EditText comments;
     Integer numberOfBays;
+    private SharedPreferences.Editor editor;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.post_results);
+
+        editor = getSharedPreferences(MainActivity.TAG_MYPREFS, Context.MODE_PRIVATE).edit();
 
         // Need to load the referenced test run from Extras
         Gson gson = new Gson();
@@ -91,6 +96,11 @@ public class PostTestResultActivity extends Activity {
         @Override
         protected void onPostExecute(String result) {
             Toast.makeText(getApplicationContext(),"Test Results Posted", Toast.LENGTH_LONG).show();
+            //Update NVM to show the last test run was completed
+            //But only after write results has completed.  May show 'Resume' upon re-entry into main activity.
+            editor.putBoolean(MainActivity.TAG_RESUME_AVAILABLE,false);
+            editor.putString(TestRunActivity.TAG_SAVED_TEST_RUN, "");
+            editor.commit();
         }
     }
 }

@@ -51,7 +51,8 @@ public class BayItem{
         this.isActive = activeStatus;
         this.isFailed=false;
         this.lowValue=0;
-        this.medValue=0;
+        // This effectively nullifies the medium value check for the fans.  The logic will skip over this piece now.
+        this.medValue=1;
         this.highValue=0;
         this.lastOffTime = new Date();
         this.cycleTestComplete=false;
@@ -198,46 +199,51 @@ public class BayItem{
                 }
             }
 
-            // Check to see if the cycle timer has already passed
-            // If so, ignore this
-            if (!cycleTestComplete) {
-                if (oldUnitState.equals("Low") && (
-                        unitState.equals("BackLight Off") ||
-                                unitState.equals("BackLight On") ||
-                                unitState.equals("Off") ||
-                                unitState.equals("FanTurnOn"))) {
-                    // We have toggled from Low to Off (in some form)
-                    // Save the timestamp info for future reference
-                    if (lastOffTime != null) {
-                        // Check the difference here
-                        Date checkTime = new Date();
-                        // Time difference in milliseconds
-                        long difference = checkTime.getTime() - lastOffTime.getTime();
-                        Integer seconds = (int) (difference / 1000);
-                        // in any case, reset the date here so as not to smudge it with breakpoints
-                        lastOffTime = new Date();
-                        switch (seconds) {
-                            case 117:
-                            case 118:
-                            case 119:
-                            case 120:
-                            case 121:
-                            case 122:
-                            case 123:
-                                // We have a winner for fan cycle test timing.
-                                cycleTestComplete = true;
-                                stepStatus = "Passed";
-                                lcdState = "OFF";
-                                refreshScreen = true;
-                                break;
-                            default:
-                                // No winner
-                                cycleTestComplete = false;
-                                break;
+
+            // We only want the cycle timer to engage if we have already passed step 3
+            // Step 3 can be passed if we have values for all three fan speeds and the display fan speed
+            if (!highValue.equals(0) && !lowValue.equals(0) && !medValue.equals(0) && !fanMedDisplayValue.equals("")) {
+                // Check to see if the cycle timer has already passed
+                // If so, ignore this
+                if (!cycleTestComplete) {
+                    if (oldUnitState.equals("Low") && (
+                            unitState.equals("BackLight Off") ||
+                                    unitState.equals("BackLight On") ||
+                                    unitState.equals("Off") ||
+                                    unitState.equals("FanTurnOn"))) {
+                        // We have toggled from Low to Off (in some form)
+                        // Save the timestamp info for future reference
+                        if (lastOffTime != null) {
+                            // Check the difference here
+                            Date checkTime = new Date();
+                            // Time difference in milliseconds
+                            long difference = checkTime.getTime() - lastOffTime.getTime();
+                            Integer seconds = (int) (difference / 1000);
+                            // in any case, reset the date here so as not to smudge it with breakpoints
+                            lastOffTime = new Date();
+                            switch (seconds) {
+                                case 117:
+                                case 118:
+                                case 119:
+                                case 120:
+                                case 121:
+                                case 122:
+                                case 123:
+                                    // We have a winner for fan cycle test timing.
+                                    cycleTestComplete = true;
+                                    stepStatus = "Passed";
+                                    lcdState = "OFF";
+                                    refreshScreen = true;
+                                    break;
+                                default:
+                                    // No winner
+                                    cycleTestComplete = false;
+                                    break;
+                            }
+                        } else {
+                            // Set the reference time
+                            lastOffTime = new Date();
                         }
-                    } else {
-                        // Set the reference time
-                        lastOffTime = new Date();
                     }
                 }
             }

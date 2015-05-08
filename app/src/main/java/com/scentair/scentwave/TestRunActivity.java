@@ -51,6 +51,9 @@ public class TestRunActivity extends Activity implements customButtonListener {
     private Button completeStepButton;
     private Resources resources;
     private static int[] popUpSpeeds;
+    private String lastScentairBarcode="";
+    private String lastMitecBarcode="";
+
 
     // These are used to save the current state of the test run to prefs
     private String testRunSavedState;
@@ -234,24 +237,18 @@ public class TestRunActivity extends Activity implements customButtonListener {
         // Here we need an AlertDialog that provides a list of potential failure reasons
             TestStep testStep = testSteps.get(testRun.currentTestStep-1);
             testRun.bayItems[position].lcdState = "OFF";
-
             final CharSequence[] failureStrings = new CharSequence[testStep.possibleFailures.size()];
-
             for (int i=0;i<testStep.possibleFailures.size();i++) {
                 Integer failureOffset = testStep.possibleFailures.get(i)-1;
                 Failure failure = failureList.get(failureOffset);
                 failureStrings[i] = failure.failureText;
             }
-
             testRun.bayItems[position].stepStatus = "Failed";
             testRun.bayItems[position].isFailed = true;
             testRun.bayItems[position].failStep = testRun.currentTestStep;
-
             final int bayPosition = position;
-
             LayoutInflater inflater= getLayoutInflater();
             View dialogView = inflater.inflate(R.layout.failureitem,null);
-
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle("Failure Reason")
                     .setItems(failureStrings, new DialogInterface.OnClickListener() {
@@ -282,16 +279,31 @@ public class TestRunActivity extends Activity implements customButtonListener {
 
         // First, check to see if the barcode is a valid scentair barcode
         if (candidateText.endsWith(scentairCheckString)) {
-            // This is a valid scentair barcode
-            // Save it into the array
-            // Check to see if the mitec field is also entered for this position, then move focus to the next row mitec field
-            // If the mitec field is not entered, keep the focus on this row.
-            testRun.bayItems[position].scentairBarcode=candidateText;
-            nextBay = testRun.setNextBarcodeEditField();
+            // Now check to make sure they have not re-entered the same scentair barcode
+            if (!candidateText.equals(lastScentairBarcode)) {
+                // This is a valid scentair barcode
+                // Save it into the array
+                // Check to see if the mitec field is also entered for this position, then move focus to the next row mitec field
+                // If the mitec field is not entered, keep the focus on this row.
+                testRun.bayItems[position].scentairBarcode=candidateText;
+                nextBay = testRun.setNextBarcodeEditField();
+                // Make sure we keep track of the last valid scentair barcode
+                lastScentairBarcode=candidateText;
+            } else {
+                // The same barcode was entered twice in a row, keep the focus here
+                testRun.bayItems[position].isEditScentair=true;
+            }
         } else if (candidateText.contains(mitecCheckString)) {
-            // This is a valid Mitec barcode.  Put it where it belongs and keep focus here.
-            testRun.bayItems[position].mitecBarcode=candidateText;
-            nextBay = testRun.setNextBarcodeEditField();
+            // Now check to make sure this is not a duplicate of the last mitec barcode
+            if (!candidateText.equals(lastMitecBarcode)) {
+                // This is a valid Mitec barcode.  Put it where it belongs and keep focus here.
+                testRun.bayItems[position].mitecBarcode=candidateText;
+                nextBay = testRun.setNextBarcodeEditField();
+                lastMitecBarcode=candidateText;
+            } else {
+                // Keep it here, dupes are not allowed
+                testRun.bayItems[position].isEditScentair=true;
+            }
         } else {
             // This is not a valid barcode for either type.  Keep focus here
             testRun.bayItems[position].isEditScentair=true;
@@ -308,24 +320,35 @@ public class TestRunActivity extends Activity implements customButtonListener {
         // Something has been entered into the mitec field
         // validate it and enter it if is good.  then move to scentair field
         // need to move focus and cursor to scentair barcode
-
         Integer nextBay = -1;
         testRun.bayItems[position].isEditMitec=false;
         String mitecCheckString = resources.getString(R.string.MITEC_BARCODE_CHECK);
         String scentairCheckString = resources.getString(R.string.SCENTAIR_BARCODE_CHECK);
-
         // First, check to see if the barcode is a valid scentair barcode
         if (candidateText.contains(mitecCheckString)) {
-            // This is a valid mitec barcode
-            // Save it into the array
-            // Check to see if the scentair field is also entered for this position, if not, move focus to that
-            // if there is a scentair code already entered, move to next active bay mitec field.
-            testRun.bayItems[position].mitecBarcode=candidateText;
-            nextBay = testRun.setNextBarcodeEditField();
+            // Check for duplicate entry
+            if (!candidateText.equals(lastMitecBarcode)) {
+                // This is a valid mitec barcode
+                // Save it into the array
+                // Check to see if the scentair field is also entered for this position, if not, move focus to that
+                // if there is a scentair code already entered, move to next active bay mitec field.
+                testRun.bayItems[position].mitecBarcode=candidateText;
+                nextBay = testRun.setNextBarcodeEditField();
+                lastMitecBarcode=candidateText;
+            } else {
+                // Dupes are not allowed, keep focus here
+                testRun.bayItems[position].isEditMitec=true;
+            }
         } else if (candidateText.endsWith(scentairCheckString)) {
-            // This is a valid scentair barcode.  Put it where it belongs and keep focus here.
-            testRun.bayItems[position].scentairBarcode=candidateText;
-            nextBay = testRun.setNextBarcodeEditField();
+            if (!candidateText.equals(lastScentairBarcode)) {
+                // This is a valid scentair barcode.  Put it where it belongs and keep focus here.
+                testRun.bayItems[position].scentairBarcode=candidateText;
+                nextBay = testRun.setNextBarcodeEditField();
+                lastScentairBarcode=candidateText;
+            } else {
+                // Dupes are not allowed, keep the focus here.
+                testRun.bayItems[position].isEditMitec=true;
+            }
         } else {
             // This is not a valid barcode for either type.  Keep focus here
             testRun.bayItems[position].isEditMitec=true;
@@ -414,10 +437,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
         if (testRun.currentTestStep>testRun.maxTestSteps)
         {
             // End of this run, report results.
-            //Update NVM to show the last test run was completed
-            editor.putBoolean(MainActivity.TAG_RESUME_AVAILABLE,false);
-            editor.putString(TAG_SAVED_TEST_RUN, "");
-            editor.commit();
+
             postTestResults();
             //close this activity
             finish();
@@ -766,6 +786,61 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 editor.putBoolean(MainActivity.TAG_RESUME_AVAILABLE, false);
                 editor.putString(TAG_SAVED_TEST_RUN,"");
                 editor.commit();
+
+                // DEBUG - check if barcode debug is set.  If so, through some junk into the barcodes
+                // so we can move on to the rest of the tests
+                Boolean barcodeOverride = sharedPreferences.getBoolean(MainActivity.DEBUG_BARCODE_OVERRIDE, false);
+                if (barcodeOverride) {
+                    // Mitec barcodes are set to letters, scentair to numbers
+                    testRun.bayItems[0].mitecBarcode="AAA123";
+                    testRun.bayItems[0].scentairBarcode="123AAA";
+                    testRun.bayItems[1].mitecBarcode="AAA123333";
+                    testRun.bayItems[1].scentairBarcode="124AAA";
+                    testRun.bayItems[2].mitecBarcode="AAA128";
+                    testRun.bayItems[2].scentairBarcode="127AAA";
+                    testRun.bayItems[3].mitecBarcode="AAA123111";
+                    testRun.bayItems[3].scentairBarcode="122111AAA";
+                    testRun.bayItems[4].mitecBarcode="AAA124";
+                    testRun.bayItems[4].scentairBarcode="123AAA";
+                    testRun.bayItems[5].mitecBarcode="AAA122";
+                    testRun.bayItems[5].scentairBarcode="121AAA";
+                    testRun.bayItems[6].mitecBarcode="AAA121";
+                    testRun.bayItems[6].scentairBarcode="121AAA";
+                    testRun.bayItems[7].mitecBarcode="AAA128";
+                    testRun.bayItems[7].scentairBarcode="1212AAA";
+                    testRun.bayItems[8].mitecBarcode="AAA1123";
+                    testRun.bayItems[8].scentairBarcode="12352AAA";
+                    testRun.bayItems[9].mitecBarcode="AAA1252";
+                    testRun.bayItems[9].scentairBarcode="1231245AAA";
+                    testRun.bayItems[10].mitecBarcode="AAA1256123";
+                    testRun.bayItems[10].scentairBarcode="12312AAA";
+                    testRun.bayItems[11].mitecBarcode="AA12A123";
+                    testRun.bayItems[11].scentairBarcode="12351A2AA";
+                    testRun.bayItems[12].mitecBarcode="AA12A11223";
+                    testRun.bayItems[12].scentairBarcode="123A12A1A";
+                    testRun.bayItems[13].mitecBarcode="AA11A12123";
+                    testRun.bayItems[13].scentairBarcode="1213A1A23A";
+                    testRun.bayItems[14].mitecBarcode="AA215A1123";
+                    testRun.bayItems[14].scentairBarcode="123AA215A";
+                    testRun.bayItems[15].mitecBarcode="AAA122213";
+                    testRun.bayItems[15].scentairBarcode="1232A1A2A";
+                    testRun.bayItems[16].mitecBarcode="AA2A12253";
+                    testRun.bayItems[16].scentairBarcode="12232A1A1A";
+                    testRun.bayItems[17].mitecBarcode="A6AA123";
+                    testRun.bayItems[17].scentairBarcode="12993AAA";
+                    testRun.bayItems[18].mitecBarcode="A4AA123";
+                    testRun.bayItems[18].scentairBarcode="1263453A4AA";
+                    testRun.bayItems[19].mitecBarcode="A4AA41523";
+                    testRun.bayItems[19].scentairBarcode="123A7A43A";
+                    testRun.bayItems[20].mitecBarcode="A333AA123";
+                    testRun.bayItems[20].scentairBarcode="12333AA3A";
+                    testRun.bayItems[21].mitecBarcode="A888AA3123";
+                    testRun.bayItems[21].scentairBarcode="132436AA33A";
+                    testRun.bayItems[22].mitecBarcode="A2345AA123";
+                    testRun.bayItems[22].scentairBarcode="123AA2344A";
+                    testRun.bayItems[23].mitecBarcode="A3A33A2123";
+                    testRun.bayItems[23].scentairBarcode="1223453A5A5A";
+                }
             }
 
             aa= new BayItemArrayAdapter(context, testRun);
