@@ -76,7 +76,6 @@ public class BayItem{
                         this.stepStatus = "Passed";
                     } else {
                         returnValue = "Barcodes not entered";
-                        //this.stepStatus = "Not Tested";
                     }
                     break;
                 case 2:
@@ -89,9 +88,9 @@ public class BayItem{
                 case 3:
                     // Pass criteria for step 3 is that values are recorded for each target fan speed
                     // fan values are saved when the unit state is settled on the target fan speed
-                    if (medValue != 0 && lowValue != 0 && highValue != 0) {
+                    if (lowValue != 0 && highValue != 0) {
                         returnValue = "Pass";
-                    } else returnValue = "Fan speeds not recorded";
+                    } else returnValue = "Low Fan =" + lowValue + "\nHigh Fan = " + highValue;
                     break;
                 case 4:
                     // There is no automatic pass criteria, this step is all operator driven.
@@ -231,9 +230,11 @@ public class BayItem{
                                 case 123:
                                     // We have a winner for fan cycle test timing.
                                     cycleTestComplete = true;
-                                    stepStatus = "Passed";
-                                    lcdState = "OFF";
-                                    refreshScreen = true;
+                                    if (testStepNumber.equals(5)) {
+                                        stepStatus = "Passed";
+                                        lcdState = "OFF";
+                                        refreshScreen = true;
+                                    }
                                     break;
                                 default:
                                     // No winner

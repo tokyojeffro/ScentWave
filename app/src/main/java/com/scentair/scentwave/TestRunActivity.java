@@ -83,7 +83,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
         popUpSpeeds= resources.getIntArray(R.array.POP_UP_FAN_SPEEDS);
 
         failureList = MainActivity.failures.getFailures();
-//        rack = MainActivity.rack.getRack();
         // This will start an async process to load the current rack info from the database
         new loadDBValues().execute("http://this string argument does nothing");
 
@@ -256,6 +255,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
                     })
                     .setView(dialogView)
                     .show();
+            listView.smoothScrollToPosition(position+2);
         }
         updateCounts();
     }
@@ -438,8 +438,21 @@ public class TestRunActivity extends Activity implements customButtonListener {
             // Turn the bay lights back on
             for (int i=0;i<rack.numberOfBays;i++) {
                 if (testRun.bayItems[i].isActive && !testRun.bayItems[i].isFailed) {
-                    testRun.bayItems[i].lcdState="ON";
-                    updateLED(i, true);
+                    if (testRun.currentTestStep.equals(5)) {
+                        // Special check to see if the cycle test (step 5) has already passed
+                        if (!testRun.bayItems[i].cycleTestComplete) {
+                            testRun.bayItems[i].lcdState="ON";
+                            updateLED(i, true);
+                        } else {
+                            // The cycle test has already passed, so mark this bay passed
+                            testRun.bayItems[i].stepStatus="Passed";
+                            // Turn off readings from that bay
+
+                        }
+                    } else {
+                        testRun.bayItems[i].lcdState = "ON";
+                        updateLED(i, true);
+                    }
                 }
             }
             //Update the step begun timestamp

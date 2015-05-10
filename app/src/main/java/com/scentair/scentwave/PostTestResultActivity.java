@@ -77,7 +77,7 @@ public class PostTestResultActivity extends Activity {
     public void postResults (View view) {
         testRun.testResult.comments = comments.getText().toString();
         new saveTestResults().execute("This text is necessary, but useless");
-        finish();
+        Toast.makeText(getApplicationContext(),"Posting Results", Toast.LENGTH_LONG).show();
     }
 
     // layout button triggers this method to start new activity
@@ -90,7 +90,6 @@ public class PostTestResultActivity extends Activity {
         @Override
         protected String doInBackground(String... urls) {
             testRun.saveTestResults(MainActivity.dbServerAddress);
-
             return urls[0];
         }
         @Override
@@ -101,6 +100,7 @@ public class PostTestResultActivity extends Activity {
             editor.putBoolean(MainActivity.TAG_RESUME_AVAILABLE,false);
             editor.putString(TestRunActivity.TAG_SAVED_TEST_RUN, "");
             editor.commit();
+            finish();
         }
     }
 }

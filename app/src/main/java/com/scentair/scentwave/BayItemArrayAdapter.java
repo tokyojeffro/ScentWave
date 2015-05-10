@@ -149,6 +149,7 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
                     default:
                         // criteria not met yet, turn gray and show the return message
                         holder.passButton.setBackgroundColor(Color.LTGRAY);
+                        holder.passButton.setText(returnValue);
                         break;
                 }
                 break;
