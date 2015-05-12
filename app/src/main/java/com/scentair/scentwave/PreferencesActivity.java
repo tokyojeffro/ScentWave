@@ -36,6 +36,9 @@ public class PreferencesActivity extends Activity {
 
         overrideBarcode = (CheckBox) findViewById(R.id.barcode_override);
 
+        Boolean override = sharedPreferences.getBoolean(MainActivity.DEBUG_BARCODE_OVERRIDE,false);
+        overrideBarcode.setChecked(override);
+
         overrideBarcode.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

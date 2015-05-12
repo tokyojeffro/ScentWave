@@ -731,9 +731,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
         // This function figures out the correct phidget and offset, then sets the toggle value
         Integer phidgetOffset = bayNumber/8;
         Integer phidgetSensorNumber = bayNumber - phidgetOffset*8;
-
         Phidget thisPhidget= rack.phidgets[phidgetOffset].phidget;
-
         try {
             if(thisPhidget.isAttached()){
                 // Perform action on clicks, depending on whether it's now checked
@@ -755,11 +753,9 @@ public class TestRunActivity extends Activity implements customButtonListener {
         protected void onPostExecute(String result) {
             // Continue setup after we have loaded the rack info from the DB.
             testRun = new TestRun();
-
             if (resume) {
                 // Get the saved test run from prefs to start on from preferences
                 testRunSavedState = sharedPreferences.getString(TAG_SAVED_TEST_RUN,"");
-
                 testRun = gson.fromJson(testRunSavedState,TestRun.class);
                 Toast.makeText(getApplicationContext(), "Test Run Resumed", Toast.LENGTH_LONG).show();
             }
@@ -767,12 +763,10 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 //Initialize this test run
                 testRun = new TestRun(currentOperator, rack,testSteps.size());
                 // Make sure we read the test steps from the proper data structure
-
                 // Reset resume status and clear saved test run
                 editor.putBoolean(MainActivity.TAG_RESUME_AVAILABLE, false);
                 editor.putString(TAG_SAVED_TEST_RUN,"");
                 editor.commit();
-
                 // DEBUG - check if barcode debug is set.  If so, through some junk into the barcodes
                 // so we can move on to the rest of the tests
                 Boolean barcodeOverride = sharedPreferences.getBoolean(MainActivity.DEBUG_BARCODE_OVERRIDE, false);
@@ -828,13 +822,10 @@ public class TestRunActivity extends Activity implements customButtonListener {
                     testRun.bayItems[23].scentairBarcode="1223453A5A5A";
                 }
             }
-
             aa= new BayItemArrayAdapter(context, testRun);
             aa.setCustomButtonListener(TestRunActivity.this);
             listView.setAdapter(aa);
-
             if (resume) listView.smoothScrollToPosition(testRun.currentBay);
-
             if (testRun.currentTestStep.equals(1)) {
                 // Make sure to put the cursor on the correct field
                 // Check the first bay

@@ -29,7 +29,6 @@ import com.scentair.scentwave.CalibrationBayArrayAdapter.customCalibrationButton
 import java.util.Vector;
 
 public class CalibrationActivity extends Activity implements customCalibrationButtonListener {
-
     public Rack rack;
     ListView listView;
     public CalibrationBayArrayAdapter aa;
@@ -42,7 +41,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
     public Vector<InterfaceKitPhidget> phidgets;
     private Resources resources;
     private Integer numberOfRacks;
-
     /**
      * Called when the activity is first created.
      */
@@ -52,30 +50,22 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
         setContentView(R.layout.calibration);
         context = this.getApplicationContext();
         View footerView;
-
         // Initialize the non-volatile storage area
         sharedPreferences = getSharedPreferences(MainActivity.TAG_MYPREFS, Context.MODE_PRIVATE);
-
         // Pull the associated rack number from NVM
         currentRack = sharedPreferences.getInt(MainActivity.TAG_RACK_NUMBER, 0);
         phidgetServerAddress = sharedPreferences.getString(MainActivity.TAG_PHIDGET_SERVER_ADDRESS, "192.168.1.22");
-
         //Need to build out the bay list here.
         //The bay list is a set of fragments attached to a special adapter
         listView = (ListView) findViewById(R.id.calibrate_list_view);
-
         footerView =  ((LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.calibration_footer, null, false);
         listView.addFooterView(footerView);
-
         resources = getResources();
         numberOfRacks = resources.getInteger(R.integer.NUMBER_OF_RACKS);
-
         //Crank up the async process to load the rack values from the DB
         new loadDBValues().execute("http://this string argument does nothing");
-
         // Used in case we change the rack or the serial numbers here in calibration
         editor = getSharedPreferences(MainActivity.TAG_MYPREFS, Context.MODE_PRIVATE).edit();
-
         toggleRackButton = (Button) findViewById(R.id.current_rack);
         toggleRackButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -96,7 +86,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
                 updatePhidget1();
             }
         });
-
         TextView phidget2Field = (TextView) findViewById(R.id.phidget_2);
         phidget2Field.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -104,7 +93,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
                 updatePhidget2();
             }
         });
-
         TextView phidget3Field = (TextView) findViewById(R.id.phidget_3);
         phidget3Field.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -112,7 +100,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
                 updatePhidget3();
             }
         });
-
         Button saveAndExitButton = (Button) findViewById(R.id.save_and_exit_button);
         saveAndExitButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -121,28 +108,24 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
             }
         });
     }
-
     @Override
     public void onToggleButtonClickListener(int position, int listViewPosition) {
         // Toggle the active status of this bay
         rack.bays[position].active = !rack.bays[position].active;
         updateView();
     }
-
     @Override
     public void onCalibrationIncrementButtonClickListener(int position, int listViewPosition) {
         // Increment the calibration offset value
         rack.bays[position].calibrationOffset++;
         updateView();
     }
-
     @Override
     public void onCalibrationDecrementButtonClickListener(int position, int listViewPosition) {
         // Increment the calibration offset value
         rack.bays[position].calibrationOffset--;
         updateView();
     }
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -156,7 +139,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
             pe.printStackTrace();
         }
     }
-
     private void updateView() {
         //TestStep testStep = testSteps.get(testRun.currentTestStep-1);
         //Get the header info loaded from the data structure
@@ -177,7 +159,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
         } catch (PhidgetException pe) {
             pe.printStackTrace();
         }
-
         // Set up phidget serial number 2
         phidgetSerialView = (TextView) findViewById(R.id.phidget_2);
         text = rack.phidgets[1].phidgetSerialNumber.toString();
@@ -212,7 +193,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
         }
         aa.notifyDataSetChanged();
     }
-
     private void saveAndExit() {
         new saveDBValues().execute("http://this is a test");
         // Clear out any saved test runs because you can't reconcile the lists across bays.
@@ -221,7 +201,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
         editor.commit();
         finish();
     }
-
     private void updatePhidget1() {
         LayoutInflater inflater= getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.phidget_list,null);
@@ -256,7 +235,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
                 .setView(dialogView)
                 .show();
     }
-
     private void updatePhidget2() {
         LayoutInflater inflater= getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.phidget_list,null);
@@ -291,7 +269,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
                 .setView(dialogView)
                 .show();
     }
-
     private void updatePhidget3() {
         LayoutInflater inflater= getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.phidget_list,null);
@@ -326,7 +303,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
                 .setView(dialogView)
                 .show();
     }
-
     class AttachDetachRunnable implements Runnable {
         Phidget phidget;
         boolean attach;
@@ -370,7 +346,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
             }
         }
     }
-
     class SensorChangeRunnable implements Runnable {
         int phidgetNumber,sensorIndex, sensorVal;
 
@@ -385,7 +360,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
             aa.notifyDataSetChanged();
         }
     }
-
     private void updateLED (Integer bayNumber, Boolean turnOn) {
         // This function figures out the correct phidget and offset, then sets the toggle value
         Integer phidgetOffset = bayNumber/8;
@@ -400,7 +374,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
             e.printStackTrace();
         }
     }
-
     private class saveDBValues extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... urls) {
@@ -412,7 +385,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
             Toast.makeText(getApplicationContext(), "Calibration updated", Toast.LENGTH_LONG).show();
         }
     }
-
     private class loadDBValues extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... urls) {

@@ -57,7 +57,7 @@ public class BayItem{
         this.lastOffTime = new Date();
         this.cycleTestComplete=false;
         this.fanMedDisplayValue="";
-        this.lcdState="OFF";
+        this.lcdState="ON";
     }
 
     public String isPassReady(Integer testNumber) {
@@ -90,7 +90,21 @@ public class BayItem{
                     // fan values are saved when the unit state is settled on the target fan speed
                     if (lowValue != 0 && highValue != 0) {
                         returnValue = "Pass";
-                    } else returnValue = "Low Fan =" + lowValue + "\nHigh Fan = " + highValue;
+                    } else {
+                        // Need to figure out if we need to set HIGH as Blue, LOW as Blue, or both to gray
+                        if (lowValue.equals(0) && highValue.equals(0)) {
+                            // They should both be gray
+                            returnValue = "<font color=#2F4F4F>Low Pending</font>\n<font color=#2F4F4F>High Pending</font>";
+                        } else {
+                            if (lowValue.equals(0)) {
+                                // Just Low is gray, High should be Blue
+                                returnValue = "<font color=#2F4F4F>Low Pending</font>\n<font color=#0000FF>High Complete</font>";
+                            } else {
+                                // High should be gray, Low is Blue
+                                returnValue = "<font color=#0000FF>Low Complete</font>\n<font color=#2F4F4F>High Pending</font>";
+                            }
+                        }
+                    }
                     break;
                 case 4:
                     // There is no automatic pass criteria, this step is all operator driven.
