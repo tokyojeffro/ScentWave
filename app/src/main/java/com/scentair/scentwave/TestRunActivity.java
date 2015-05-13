@@ -62,42 +62,33 @@ public class TestRunActivity extends Activity implements customButtonListener {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.testrun);
         context = this.getApplicationContext();
-
         // Initialize the non-volatile storage area
         sharedPreferences = getSharedPreferences(MainActivity.TAG_MYPREFS, Context.MODE_PRIVATE);
         editor = getSharedPreferences(MainActivity.TAG_MYPREFS,Context.MODE_PRIVATE).edit();
-
         // Check to see if we are supposed to resume a paused/aborted run
         Bundle extras = getIntent().getExtras();
         if (extras!=null) {
             resume=extras.getBoolean(MainActivity.TAG_RESUME_AVAILABLE);
         }
-
         // Need to make sure we pull out the calibration info before starting the test run
         // Pull the associated rack number from NVM
         currentOperator = sharedPreferences.getString(MainActivity.TAG_OPERATOR_NAME,"");
         phidgetServerAddress = sharedPreferences.getString(MainActivity.TAG_PHIDGET_SERVER_ADDRESS,"192.168.1.22");
-
         machineStates = new MachineStates();
         resources = getResources();
         popUpSpeeds= resources.getIntArray(R.array.POP_UP_FAN_SPEEDS);
-
         failureList = MainActivity.failures.getFailures();
         // This will start an async process to load the current rack info from the database
         new loadDBValues().execute("http://this string argument does nothing");
-
         //Initialize Gson object;
         gson = new Gson();
         showCompleteStepButton="";
-
         //Need to build out the bay list here.
         //The bay list is a set of fragments attached to a special adapter
         listView = (ListView) findViewById(R.id.list_view);
         listView.setItemsCanFocus(true);
-
         View footerView =  ((LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.baylistfooter, listView, false);
         listView.addFooterView(footerView);
-
         completeStepButton = (Button) findViewById(R.id.complete_step_button);
         completeStepButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -601,7 +592,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
             aa.notifyDataSetChanged();
         }
     }
-
     private void saveTestRunState () {
         // get test run state info translated to a string
         testRun.currentBay=testRun.currentStepUnitsTested;
@@ -611,7 +601,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
         editor.putString(TAG_SAVED_TEST_RUN,testRunSavedState);
         editor.commit();
     }
-
     private void postTestResults() {
         //Calculate results
         testRun.calculateResults(rack);
@@ -625,7 +614,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
         startActivity(newIntent);
         finish();
     }
-
     class AttachDetachRunnable implements Runnable {
         Phidget phidget;
         boolean attach;
@@ -670,17 +658,16 @@ public class TestRunActivity extends Activity implements customButtonListener {
             }
         }
     }
-
     class SensorChangeRunnable implements Runnable {
         int phidgetNumber,sensorIndex, sensorVal;
-
         public SensorChangeRunnable(int phidgetNumber, int index, int val) {
             this.sensorIndex = index;
             this.sensorVal = val;
             this.phidgetNumber=phidgetNumber;
         }
         public void run() {
-            // Put the value from the phidget into the
+            // Put the value from the phidget into the correct bay
+            // after applying the offset
             Integer bayValue = (phidgetNumber*8)+sensorIndex;
             Integer updatedValue=0;
             if (rack.bays!=null) {
@@ -693,7 +680,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
             }
         }
     }
-
     @Override
     public void onMitecBarCodeFocusChangeListener(int position, boolean touchFocusSelect) {
         // Operator has touched a field, shift the edit and focus to that field and clear the others.
@@ -710,7 +696,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
             aa.notifyDataSetChanged();
         }
     }
-
     @Override
     public void onScentAirBarCodeFocusChangeListener(int position, boolean touchFocusSelect) {
         //clear the old edit field because the user has selected this field.
@@ -726,7 +711,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
             aa.notifyDataSetChanged();
         }
     }
-
     private void updateLED (Integer bayNumber, Boolean turnOn) {
         // This function figures out the correct phidget and offset, then sets the toggle value
         Integer phidgetOffset = bayNumber/8;
@@ -741,7 +725,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
             e.printStackTrace();
         }
     }
-
     private class loadDBValues extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... urls) {
@@ -835,12 +818,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
             // add the phidget interface stuff for the real time value.
             try {
                 for (int i=0;i<rack.numberOfPhidgetsPerRack;i++) {
-                    // This should lower the data rate to the minimum value
-                    // and lower the threshold to provide new change events
-                    //for (int j=0;j<7;j++) {
-                    //    rack.phidgets[i].phidget.setDataRate(j,100);
-                    //    rack.phidgets[i].phidget.setSensorChangeTrigger(j,15);
-                    //}
                     rack.phidgets[i].phidget.addAttachListener(new AttachListener() {
                         public void attached(final AttachEvent ae) {
                             AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), true);
@@ -873,14 +850,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
                             runOnUiThread(new SensorChangeRunnable(finalI, se.getIndex(), se.getValue()));
                         }
                     });
-/*  Until we need it
-            ik.addInputChangeListener(new InputChangeListener() {
-                public void inputChanged(InputChangeEvent ie) {
-                    runOnUiThread(new InputChangeRunnable(ie.getIndex(), ie.getState()));
-                }
-            });
-*/
-                    //ik.openAny(phidgetServerAddress, 5001);
                     rack.phidgets[i].phidget.open(rack.phidgets[i].phidgetSerialNumber, phidgetServerAddress, 5001);
                 }
             } catch (PhidgetException pe) {
@@ -890,17 +859,4 @@ public class TestRunActivity extends Activity implements customButtonListener {
             updateView();
         }
     }
-//    class InputChangeRunnable implements Runnable {
-//        int index;
-//        boolean val;
-//        public InputChangeRunnable(int index, boolean val)
-//        {
-//            this.index = index;
-//            this.val = val;
-//        }
-//        public void run() {
-//            if(inputCheckBoxes[index]!=null)
-//                inputCheckBoxes[index].setChecked(val);
-//        }
-//    }
 }

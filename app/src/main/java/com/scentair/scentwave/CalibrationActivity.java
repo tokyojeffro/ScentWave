@@ -348,7 +348,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
     }
     class SensorChangeRunnable implements Runnable {
         int phidgetNumber,sensorIndex, sensorVal;
-
         public SensorChangeRunnable(int phidgetNumber, int index, int val) {
             this.sensorIndex = index;
             this.sensorVal = val;
@@ -399,10 +398,8 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
             aa = new CalibrationBayArrayAdapter(context, rack.getBays());
             aa.setCustomCalibrationButtonListener(CalibrationActivity.this);
             listView.setAdapter(aa);
-
             // add the phidget interface stuff for the real time value.
             try {
-
                 try {
                     phidgetManager = new Manager();
                     phidgetManager.open(phidgetServerAddress,5001);
@@ -412,7 +409,6 @@ public class CalibrationActivity extends Activity implements customCalibrationBu
                 } catch (PhidgetException pe) {
                     pe.printStackTrace();
                 }
-
                 for (int i=0;i<rack.numberOfPhidgetsPerRack;i++) {
                     rack.phidgets[i].phidget.addAttachListener(new AttachListener() {
                         public void attached(final AttachEvent ae) {

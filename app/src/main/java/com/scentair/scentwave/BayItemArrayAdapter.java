@@ -13,17 +13,11 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
-
     private final Context context;
-    
     private TestRun testRun=new TestRun();
-    
     customButtonListener customListener;
 
-
-
     public interface customButtonListener {
-
         void onPassButtonClickListener(int position, int listViewPosition);
         void onFailButtonClickListener(int position, int listViewPosition);
         void onScentAirBarCodeClickListener(int position, String candidateText);
@@ -31,11 +25,9 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
         void onScentAirBarCodeFocusChangeListener(int position, boolean touchFocusSelect);
         void onMitecBarCodeFocusChangeListener(int position, boolean touchFocusSelect);
     }
-
     public void setCustomButtonListener(customButtonListener listener) {
         this.customListener = listener;
     }
-
     static class ViewHolder {
         ViewGroup bayInactive;
         TextView bayNumberField;
@@ -49,14 +41,12 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
         ViewGroup bayItem;
         TextView bayInactiveText;
     }
-
     public BayItemArrayAdapter(Context context, TestRun _testRun) {
         super(context, R.layout.bayitem, _testRun.bayItems);
         this.context = context;
         this.testRun = new TestRun();
         this.testRun = _testRun.getTestRun();
     }
-    
     @Override
     public View getView(final int position, View convertView, ViewGroup parent) {
         View rowView = convertView;
