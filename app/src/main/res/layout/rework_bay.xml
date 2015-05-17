@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="34dp"
+    android:layout_height="34dp"
+    android:background="@android:color/darker_gray">
+    <TextView
+        android:layout_height="33dp"
+        android:layout_width="33dp"
+        android:id="@+id/rework_bay_number"
+        android:background="@drawable/results_cell_passed"
+        android:textSize="15dp"
+        android:gravity="center_vertical|center_horizontal">
+        android:text="11"
+        android:layout_marginRight="1dp"
+    </TextView>
+</LinearLayout>

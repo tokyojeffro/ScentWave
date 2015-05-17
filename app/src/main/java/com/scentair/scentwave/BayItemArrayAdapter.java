@@ -3,6 +3,7 @@ package com.scentair.scentwave;
 import android.content.Context;
 import android.graphics.Color;
 import android.text.Html;
+import android.text.Spanned;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -113,7 +114,6 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
                 holder.failButton.setText("Fail");
                 holder.failButton.setBackgroundColor(Color.parseColor("#FF4444"));
                 String returnValue = testRun.bayItems[position].isPassReady(testRun.currentTestStep);
-                holder.passButton.setText(Html.fromHtml(returnValue));
                 switch (returnValue) {
                     case "Pass":
                         // The criteria for pass are met, enable the button and set the color to green
@@ -129,7 +129,8 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
                     default:
                         // criteria not met yet, turn gray and show the return message
                         holder.passButton.setBackgroundColor(Color.LTGRAY);
-                        holder.passButton.setText(returnValue);
+                        Spanned result = Html.fromHtml(returnValue);
+                        holder.passButton.setText(result);
                         break;
                 }
                 break;

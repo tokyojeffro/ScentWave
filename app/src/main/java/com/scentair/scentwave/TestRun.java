@@ -27,7 +27,6 @@ public class TestRun{
     public Integer numberOfActiveBays;
     public BayItem[] bayItems;
     public TestResult testResult;
-
     // Constructor to generate a new test run
     public TestRun(String operator, Rack rack, Integer numTestSteps){
         this.maxTestSteps=numTestSteps;
@@ -45,14 +44,12 @@ public class TestRun{
         // Set the start time for the first test step
         this.testResult.setStartTime(0);
     }
-
     // Empty constructor for reconstitution after resume
     public TestRun () {}
 
     public TestRun getTestRun(){
         return this;
     }
-
     public Integer getNextActiveBay (Integer position) {
         Integer returnValue=position+1;
         Boolean activeFound=false;
@@ -68,7 +65,6 @@ public class TestRun{
             return bayItems.length;
         } else return returnValue;
     }
-
     public Integer setNextBarcodeEditField () {
         Integer targetBay = -1;
         // Look at the data and figure out where to put the cursor for barcode entry
@@ -93,7 +89,6 @@ public class TestRun{
         }
         return targetBay;
     }
-
     public void calculateResults(Rack rack) {
         // Each unit in the test needs new unit and unittest objects
         for (int i=0;i<rack.numberOfBays;i++) {
@@ -101,13 +96,11 @@ public class TestRun{
             if (bayItems[i].isActive) {
                 // If there are any active bays left
                 BayItem bayItem = bayItems[i];
-
                 // Create a new Unit with the barcode info
                 SW1004Unit newUnit = new SW1004Unit(
                         bayItem.mitecBarcode,
                         bayItem.scentairBarcode
                 );
-
                 // Get the results from that bay and create a new unit test
                 UnitTest newUnitTest = new UnitTest(
                         newUnit,
@@ -147,7 +140,6 @@ public class TestRun{
         testResult.step4Stop = testResult.stepEndTimes[3];
         testResult.step5Stop = testResult.stepEndTimes[4];
     }
-
     public void saveTestResults (String serverAddress) {
         DefaultHttpClient httpClient = new DefaultHttpClient();
         // First step, save the new units in their table
@@ -165,9 +157,7 @@ public class TestRun{
             se.setContentType("application/json;charset=UTF-8");
             se.setContentEncoding(new BasicHeader(HTTP.CONTENT_TYPE, "application/json;charset=UTF-8"));
             httpPostReq.setEntity(se);
-
             HttpResponse httpResponse = httpClient.execute(httpPostReq);
-
             BufferedReader in = null;
             try {
                 //Log.d("status line ", "test " + response.getStatusLine().toString());

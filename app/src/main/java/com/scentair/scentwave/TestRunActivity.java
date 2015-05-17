@@ -97,7 +97,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
             }
         });
     }
-
     @Override
     public void onPassButtonClickListener(int position, int listViewPosition) {
         // One of the test steps has passed for one of the units in the bays
@@ -105,7 +104,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
         //   Update the counts
         //   change the row in some visual way (maybe change to light green background color?
         //   scroll down to the next entry
-
         //Check to see if they are marking a previous failed unit as passed.
         //if so, clear the data and reset to untested.
         String passStatus = testRun.bayItems[position].isPassReady(testRun.currentTestStep);
@@ -117,6 +115,8 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 testRun.bayItems[position].isFailed = false;
                 // Reset tested status
                 testRun.bayItems[position].stepStatus = "Not Tested";
+                testRun.bayItems[position].lcdState = "ON";
+                updateLED(position,true);
                 break;
             case "Passed":
                 // The bay has already been passed
@@ -125,9 +125,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
                     // noted visually by the operator
                     LayoutInflater inflater = getLayoutInflater();
                     View dialogView = inflater.inflate(R.layout.fanspeedpopup, null);
-
                     final CharSequence[] popUpSpeedStrings = new CharSequence[popUpSpeeds.length];
-
                     for (int i = 0; i < popUpSpeeds.length; i++) {
                         Integer popUpSpeed = popUpSpeeds[i];
                         popUpSpeedStrings[i] = popUpSpeed.toString();
@@ -145,7 +143,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
                             })
                             .setView(dialogView)
                             .show();
-
                 }
                 listView.smoothScrollToPosition(position+2);
                 break;
@@ -195,7 +192,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
         // update results totals
         updateCounts();
     }
-
     @Override
     public void onFailButtonClickListener(int position, int listViewPosition) {
         // One of the test steps has failed for one of the units in the bays
@@ -205,11 +201,11 @@ public class TestRunActivity extends Activity implements customButtonListener {
         //   Update the results totals
         //   change the row in some visual way (maybe change to red background color?
         //   scroll down to the next entry
-
         if (testRun.bayItems[position].stepStatus.equals("Passed")) {
             // Toggle back to normal state
             testRun.bayItems[position].stepStatus = "Not Tested";
             testRun.bayItems[position].lcdState = "ON";
+            updateLED(position,true);
             if (testRun.currentTestStep.equals(1)) {
                 // make sure both barcodes are cleared so they can be reset
                 testRun.bayItems[position].mitecBarcode="";
@@ -250,7 +246,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
         }
         updateCounts();
     }
-
     @Override
     public void onScentAirBarCodeClickListener(int position, String candidateText) {
         // Scentair barcode has been entered, need to scroll to the next row
@@ -296,7 +291,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
         }
         aa.notifyDataSetChanged();
     }
-
     @Override
     public void onMitecBarCodeClickListener(int position, String candidateText) {
         // Something has been entered into the mitec field
@@ -341,22 +335,17 @@ public class TestRunActivity extends Activity implements customButtonListener {
         }
         aa.notifyDataSetChanged();
     }
-
     private void completeTestStep () {
         // This is the only way to finish this step and move to the next step
         // This button is only active if all active bays have been passed or failed.
         Boolean moveToNextStep = true;
         Boolean showView = false;
-
         if ((testRun.overallUnitsFailed + testRun.currentStepUnitsFailed)>=testRun.numberOfActiveBays) {
             // This is a special case where all units have failed
             // End the test run here, there is no more to say
             // do not load the next step
-            //Update NVM to show the last test run was completed
-            editor.putBoolean(MainActivity.TAG_RESUME_AVAILABLE,false);
-            editor.putString(TAG_SAVED_TEST_RUN, "");
-            editor.commit();
             moveToNextStep=false;
+            saveTestRunState();
             postTestResults();
             finish();
         } else if ( testRun.currentStepUnitsTested >= testRun.numberOfActiveBays) {
@@ -378,7 +367,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
         }
         if (showView) updateView();
     }
-
     protected Boolean loadNextStep() {
         // This is the code to load the next test step and reset the variables for a new run
         // through the bay list
@@ -387,7 +375,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
         // reset the various counters
         // go back to the top of the list
         Boolean returnValue=false;
-
         for (int i=0;i<rack.numberOfBays;i++) {
             // Only check active bays
             if (testRun.bayItems[i].isActive) {
@@ -453,7 +440,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
         }
         return returnValue;
     }
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -467,7 +453,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
         }
         rack = null;
     }
-
     private void updateCounts(){
         testRun.currentStepUnitsFailed=0;
         testRun.currentStepUnitsPassed=0;
@@ -519,11 +504,9 @@ public class TestRunActivity extends Activity implements customButtonListener {
         updateView();
         saveTestRunState();
     }
-
     private void updateView(){
         if (testRun!=null) {
             TestStep testStep = testSteps.get(testRun.currentTestStep - 1);
-
             //Get the header info loaded from the data structure
             TextView currentStep = (TextView) findViewById(R.id.teststepnumber);
             String text = "Step " + testRun.currentTestStep.toString() + " of " + testRun.maxTestSteps.toString();

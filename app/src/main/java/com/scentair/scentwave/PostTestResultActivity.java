@@ -4,14 +4,13 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.GridView;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import com.google.gson.Gson;
 import com.phidgets.*;
 import com.phidgets.Phidget;
@@ -19,9 +18,6 @@ import com.phidgets.event.AttachEvent;
 import com.phidgets.event.AttachListener;
 import com.phidgets.event.DetachEvent;
 import com.phidgets.event.DetachListener;
-import com.phidgets.event.SensorChangeEvent;
-import com.phidgets.event.SensorChangeListener;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -34,41 +30,16 @@ public class PostTestResultActivity extends Activity {
     private SharedPreferences sharedPreferences;
     private Rack rack;
     private String phidgetServerAddress;
-    private TextView[] reworkBays;
+    private Context context;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.post_results);
+        context = this.getApplicationContext();
         editor = getSharedPreferences(MainActivity.TAG_MYPREFS, Context.MODE_PRIVATE).edit();
         sharedPreferences = getSharedPreferences(MainActivity.TAG_MYPREFS, Context.MODE_PRIVATE);
         phidgetServerAddress = sharedPreferences.getString(MainActivity.TAG_PHIDGET_SERVER_ADDRESS, "192.168.1.22");
-        reworkBays = new TextView[24];
-        // Link the rework bays to the array of text views
-        reworkBays[0] = (TextView) findViewById(R.id.rework_bay_1);
-        reworkBays[1] = (TextView) findViewById(R.id.rework_bay_2);
-        reworkBays[2] = (TextView) findViewById(R.id.rework_bay_3);
-        reworkBays[3] = (TextView) findViewById(R.id.rework_bay_4);
-        reworkBays[4] = (TextView) findViewById(R.id.rework_bay_5);
-        reworkBays[5] = (TextView) findViewById(R.id.rework_bay_6);
-        reworkBays[6] = (TextView) findViewById(R.id.rework_bay_7);
-        reworkBays[7] = (TextView) findViewById(R.id.rework_bay_8);
-        reworkBays[8] = (TextView) findViewById(R.id.rework_bay_9);
-        reworkBays[9] = (TextView) findViewById(R.id.rework_bay_10);
-        reworkBays[10] = (TextView) findViewById(R.id.rework_bay_11);
-        reworkBays[11] = (TextView) findViewById(R.id.rework_bay_12);
-        reworkBays[12] = (TextView) findViewById(R.id.rework_bay_13);
-        reworkBays[13] = (TextView) findViewById(R.id.rework_bay_14);
-        reworkBays[14] = (TextView) findViewById(R.id.rework_bay_15);
-        reworkBays[15] = (TextView) findViewById(R.id.rework_bay_16);
-        reworkBays[16] = (TextView) findViewById(R.id.rework_bay_17);
-        reworkBays[17] = (TextView) findViewById(R.id.rework_bay_18);
-        reworkBays[18] = (TextView) findViewById(R.id.rework_bay_19);
-        reworkBays[19] = (TextView) findViewById(R.id.rework_bay_20);
-        reworkBays[20] = (TextView) findViewById(R.id.rework_bay_21);
-        reworkBays[21] = (TextView) findViewById(R.id.rework_bay_22);
-        reworkBays[22] = (TextView) findViewById(R.id.rework_bay_23);
-        reworkBays[23] = (TextView) findViewById(R.id.rework_bay_24);
         // Need to load the referenced test run from Extras
         Intent intent = getIntent();
         String jsonTestRun = intent.getStringExtra("TestRun");
@@ -103,12 +74,6 @@ public class PostTestResultActivity extends Activity {
         String durationToStr = durationFormat.format(duration);
         TextView durationView = (TextView) findViewById(R.id.results_duration);
         durationView.setText(durationToStr);
-        // Loop through the bays to tag any failed units and set the rework array
-        for (int i=0;i<rack.numberOfBays;i++) {
-            if (testRun.bayItems[i].isActive && testRun.bayItems[i].isFailed) {
-                reworkBays[i].setBackgroundColor(Color.RED);
-            }
-        }
         comments = (EditText) findViewById(R.id.results_comments);
         // Spawn a thread to load the rack DB values.
         new loadDBValues().execute("http://this string argument does nothing");
@@ -133,8 +98,33 @@ public class PostTestResultActivity extends Activity {
         }
         @Override
         protected void onPostExecute(String result) {
+            ReworkBayArrayAdapter aa;
+            GridView gridView;
             // Continue setup after we have loaded the rack info from the DB.
             // add the phidget interface stuff so we can toggle LED lights
+            // Loop through the bays to tag any failed units and set the rework array
+            gridView = (GridView) findViewById(R.id.resultsGridView);
+            aa = new ReworkBayArrayAdapter(context,testRun);
+            gridView.setAdapter(aa);
+            aa.notifyDataSetChanged();
+            Boolean atLeastOneBayFailed = false;
+            String commentsPreloadText="";
+            //Load up the comments field with all failed bays and causes.
+            for (int i=0;i<rack.numberOfBays;i++) {
+                if (testRun.bayItems[i].isActive) {
+                    // only check active bays
+                    if (testRun.bayItems[i].isFailed) {
+                        // Add bay number, fail cause, and a new line to comments preload
+                        Integer bayNumber = i+1;
+                        commentsPreloadText += "Bay " + bayNumber.toString() + " -" + testRun.bayItems[i].failCause + "\n";
+                        atLeastOneBayFailed=true;
+                    }
+                }
+            }
+            if (atLeastOneBayFailed) {
+                // save to comments field
+                comments.setText(commentsPreloadText);
+            }
             try {
                 for (int i=0;i<rack.numberOfPhidgetsPerRack;i++) {
                     rack.phidgets[i].phidget.addAttachListener(new AttachListener() {

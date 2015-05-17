@@ -75,7 +75,7 @@ public class BayItem{
                         returnValue = "Passed";
                         this.stepStatus = "Passed";
                     } else {
-                        returnValue = "Barcodes not entered";
+                        returnValue = "<font color=#2F4F4F>Barcodes not entered</font>";
                     }
                     break;
                 case 2:
@@ -83,7 +83,7 @@ public class BayItem{
                     // not 'Unplugged' and not recalibrate
                     if ((!this.unitState.equals("Unplugged")) && (!this.unitState.equals("Recalibrate"))) {
                         returnValue = "Pass";
-                    } else returnValue = "Machine not plugged in";
+                    } else returnValue = "<font color=#2F4F4F>Machine not plugged in</font>";
                     break;
                 case 3:
                     // Pass criteria for step 3 is that values are recorded for each target fan speed
