@@ -86,7 +86,6 @@ public class PostTestResultActivity extends Activity {
     }
     // layout button triggers this method to start new activity
     public void cancelResults (View view) {
-        //TODO probably need a double check popup to make sure
         finish();
     }
     private class loadDBValues extends AsyncTask<String, Void, String> {
@@ -107,6 +106,7 @@ public class PostTestResultActivity extends Activity {
             aa = new ReworkBayArrayAdapter(context,testRun);
             gridView.setAdapter(aa);
             aa.notifyDataSetChanged();
+
             Boolean atLeastOneBayFailed = false;
             String commentsPreloadText="";
             //Load up the comments field with all failed bays and causes.

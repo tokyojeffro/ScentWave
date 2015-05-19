@@ -48,7 +48,20 @@ public class ReworkBayArrayAdapter extends ArrayAdapter<BayItem> {
             holder.bayNumberField.setBackgroundResource(R.drawable.results_cell_inactive);
             holder.bayNumberField.setBackgroundColor(Color.DKGRAY);
         }
-        holder.bayNumberField.setText(String.valueOf(position + 1));
+        // Need to update the rows to show the proper 1,3,5... 2,4,6 info
+        Integer displayNumber;
+        if (position==0) {
+            displayNumber=1;
+        } else {
+            if (position<12) {
+                // This is the top/odd row
+                displayNumber = (position+1) + (position+1) - 1;
+            } else {
+                // This is the even/bottom row
+                displayNumber = 24 - (24-position+1) - (24-position+1);
+            }
+        }
+        holder.bayNumberField.setText(String.valueOf(displayNumber));
         return rowView;
     }
 }
