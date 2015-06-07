@@ -64,8 +64,8 @@ public class TestRunActivity extends Activity implements customButtonListener {
     Runnable timerRunnable = new Runnable() {
         @Override
         public void run() {
-            // Toggle the LED on/off
-            toggleLED(testRun.currentBay);
+            // Toggle the LED for the next bay in sequence on/off
+            toggleLED();
             timerHandler.postDelayed(this,LEDBlinkTimer);
         }
     };
@@ -412,6 +412,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
         testRun.currentStepUnitsFailed = 0;
         testRun.currentStepUnitsPassed = 0;
         testRun.currentStepUnitsTested = 0;
+        testRun.currentBay = 0;
         // Turn off complete step button
         showCompleteStepButton="";
         // Update the step complete timestamp
@@ -421,6 +422,8 @@ public class TestRunActivity extends Activity implements customButtonListener {
         // Check if that is the end of the steps and end of this run
         if (testRun.currentTestStep>testRun.maxTestSteps)
         {
+            // Stop all blinker timers
+            timerHandler.removeCallbacks(timerRunnable);
             // End of this run, report results.
             postTestResults();
             //close this activity
@@ -454,6 +457,8 @@ public class TestRunActivity extends Activity implements customButtonListener {
             testRun.testResult.setStartTime(testRun.currentTestStep - 1);
             //scroll back to the top of the list
             listView.smoothScrollToPosition(0);
+
+            saveTestRunState();
         }
         return returnValue;
     }
@@ -597,7 +602,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
         // get test run state info translated to a string
         testRun.currentBay=testRun.currentStepUnitsTested;
         testRunSavedState = gson.toJson(testRun);
-
         // Added to blink LED on the current bay
         if ( testRun.currentStepUnitsTested < testRun.numberOfActiveBays) {
             // There is at least one bay left to test.
@@ -613,7 +617,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 timerHandler.removeCallbacks(timerRunnable);
             }
         } else timerHandler.removeCallbacks(timerRunnable);
-
         //update NVM to save state and start on next step on restart/reboot
         editor.putBoolean(MainActivity.TAG_RESUME_AVAILABLE,true);
         editor.putString(TAG_SAVED_TEST_RUN,testRunSavedState);
@@ -743,20 +746,27 @@ public class TestRunActivity extends Activity implements customButtonListener {
             e.printStackTrace();
         }
     }
-    private void toggleLED (Integer bayNumber) {
-        Boolean oldState;
-        // This function figures out the correct phidget and offset, then sets the toggle value
-        Integer phidgetOffset = bayNumber/8;
-        Integer phidgetSensorNumber = bayNumber - phidgetOffset*8;
-        Phidget thisPhidget= rack.phidgets[phidgetOffset].phidget;
-        try {
-            if(thisPhidget.isAttached()){
-                // Get the old state and flip the toggle
-                oldState=rack.phidgets[phidgetOffset].phidget.getOutputState(phidgetSensorNumber);
-                rack.phidgets[phidgetOffset].phidget.setOutputState(phidgetSensorNumber,!oldState);
+    private void toggleLED () {
+        // Figure out the next active bay
+        Integer i=0;
+        while ((testRun.bayItems[i].lcdState!="ON") && (i<rack.numberOfBays)){
+            i++;
+        }
+        if (i<rack.numberOfBays) {
+            Boolean oldState;
+            // This function figures out the correct phidget and offset, then sets the toggle value
+            Integer phidgetOffset = i / 8;
+            Integer phidgetSensorNumber = i - phidgetOffset * 8;
+            Phidget thisPhidget = rack.phidgets[phidgetOffset].phidget;
+            try {
+                if (thisPhidget.isAttached()) {
+                    // Get the old state and flip the toggle
+                    oldState = rack.phidgets[phidgetOffset].phidget.getOutputState(phidgetSensorNumber);
+                    rack.phidgets[phidgetOffset].phidget.setOutputState(phidgetSensorNumber, !oldState);
+                }
+            } catch (PhidgetException e) {
+                e.printStackTrace();
             }
-        } catch (PhidgetException e) {
-            e.printStackTrace();
         }
     }
     private class loadDBValues extends AsyncTask<String, Void, String> {
