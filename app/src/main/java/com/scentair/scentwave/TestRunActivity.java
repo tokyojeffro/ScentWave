@@ -10,6 +10,7 @@ import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.app.Activity;
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -55,6 +56,19 @@ public class TestRunActivity extends Activity implements customButtonListener {
     // These are used to save the current state of the test run to prefs
     private String testRunSavedState;
     private Gson gson;
+    private Integer LEDBlinkTimer;
+
+
+    //A timer that posts itself at the end of the runnable
+    Handler timerHandler = new Handler();
+    Runnable timerRunnable = new Runnable() {
+        @Override
+        public void run() {
+            // Toggle the LED on/off
+            toggleLED(testRun.currentBay);
+            timerHandler.postDelayed(this,LEDBlinkTimer);
+        }
+    };
 
     /** Called when the activity is first created. */
     @Override
@@ -77,6 +91,8 @@ public class TestRunActivity extends Activity implements customButtonListener {
         machineStates = new MachineStates();
         resources = getResources();
         popUpSpeeds= resources.getIntArray(R.array.POP_UP_FAN_SPEEDS);
+        LEDBlinkTimer = resources.getInteger(R.integer.LED_BLINK_TIMER);
+
         failureList = MainActivity.failures.getFailures();
         // This will start an async process to load the current rack info from the database
         new loadDBValues().execute("http://this string argument does nothing");
@@ -421,11 +437,12 @@ public class TestRunActivity extends Activity implements customButtonListener {
                         if (!testRun.bayItems[i].cycleTestComplete) {
                             testRun.bayItems[i].lcdState="ON";
                             updateLED(i, true);
+                            testRun.currentStepUnitsPassed++;
                         } else {
                             // The cycle test has already passed, so mark this bay passed
                             testRun.bayItems[i].stepStatus="Passed";
                             // Turn off readings from that bay
-
+                            //TODO
                         }
                     } else {
                         testRun.bayItems[i].lcdState = "ON";
@@ -452,6 +469,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
             pe.printStackTrace();
         }
         rack = null;
+        timerHandler.removeCallbacks(timerRunnable);
     }
     private void updateCounts(){
         testRun.currentStepUnitsFailed=0;
@@ -579,6 +597,23 @@ public class TestRunActivity extends Activity implements customButtonListener {
         // get test run state info translated to a string
         testRun.currentBay=testRun.currentStepUnitsTested;
         testRunSavedState = gson.toJson(testRun);
+
+        // Added to blink LED on the current bay
+        if ( testRun.currentStepUnitsTested < testRun.numberOfActiveBays) {
+            // There is at least one bay left to test.
+            // Start the timer for 500 milliseconds (set up in the constants value file)
+            // The currentBay is the target
+            if (testRun.currentTestStep!=5) {
+                // We don't need anything to blink on step 5
+                // We already have a timer
+                timerHandler.post(timerRunnable);
+            } else {
+                // test step 5, turn off timer
+                // don't want anything to blink anymore
+                timerHandler.removeCallbacks(timerRunnable);
+            }
+        } else timerHandler.removeCallbacks(timerRunnable);
+
         //update NVM to save state and start on next step on restart/reboot
         editor.putBoolean(MainActivity.TAG_RESUME_AVAILABLE,true);
         editor.putString(TAG_SAVED_TEST_RUN,testRunSavedState);
@@ -703,6 +738,22 @@ public class TestRunActivity extends Activity implements customButtonListener {
             if(thisPhidget.isAttached()){
                 // Perform action on clicks, depending on whether it's now checked
                 rack.phidgets[phidgetOffset].phidget.setOutputState(phidgetSensorNumber,turnOn);
+            }
+        } catch (PhidgetException e) {
+            e.printStackTrace();
+        }
+    }
+    private void toggleLED (Integer bayNumber) {
+        Boolean oldState;
+        // This function figures out the correct phidget and offset, then sets the toggle value
+        Integer phidgetOffset = bayNumber/8;
+        Integer phidgetSensorNumber = bayNumber - phidgetOffset*8;
+        Phidget thisPhidget= rack.phidgets[phidgetOffset].phidget;
+        try {
+            if(thisPhidget.isAttached()){
+                // Get the old state and flip the toggle
+                oldState=rack.phidgets[phidgetOffset].phidget.getOutputState(phidgetSensorNumber);
+                rack.phidgets[phidgetOffset].phidget.setOutputState(phidgetSensorNumber,!oldState);
             }
         } catch (PhidgetException e) {
             e.printStackTrace();

@@ -209,7 +209,7 @@
             />
         <EditText
             android:layout_width="399dp"
-            android:layout_height="109dp"
+            android:layout_height="147dp"
             android:id="@+id/results_comments"
             android:layout_below="@id/comment_label"
             android:gravity="left"

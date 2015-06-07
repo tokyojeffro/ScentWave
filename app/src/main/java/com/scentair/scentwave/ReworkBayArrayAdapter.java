@@ -35,8 +35,11 @@ public class ReworkBayArrayAdapter extends ArrayAdapter<BayItem> {
             viewHolder.bayNumberField.setTextSize(20);
         } // end of initializing a new view
         ViewHolder holder = (ViewHolder) rowView.getTag();
-        if (testRun.bayItems[position].isActive) {
-            if (testRun.bayItems[position].isFailed) {
+        // Need to update the rows to show the proper 1,3,5... 2,4,6 info
+        Integer displayNumber=testRun.bayItems[position].getTransform(position);
+        holder.bayNumberField.setText(String.valueOf(displayNumber));
+        if (testRun.bayItems[displayNumber-1].isActive) {
+            if (testRun.bayItems[displayNumber-1].isFailed) {
                 // Bay is active, set background color and text accordingly
                 holder.bayNumberField.setBackgroundResource(R.drawable.results_cell_failed);
                 holder.bayNumberField.setBackgroundColor(Color.RED);
@@ -48,20 +51,6 @@ public class ReworkBayArrayAdapter extends ArrayAdapter<BayItem> {
             holder.bayNumberField.setBackgroundResource(R.drawable.results_cell_inactive);
             holder.bayNumberField.setBackgroundColor(Color.DKGRAY);
         }
-        // Need to update the rows to show the proper 1,3,5... 2,4,6 info
-        Integer displayNumber;
-        if (position==0) {
-            displayNumber=1;
-        } else {
-            if (position<12) {
-                // This is the top/odd row
-                displayNumber = (position+1) + (position+1) - 1;
-            } else {
-                // This is the even/bottom row
-                displayNumber = 24 - (24-position+1) - (24-position+1);
-            }
-        }
-        holder.bayNumberField.setText(String.valueOf(displayNumber));
         return rowView;
     }
 }

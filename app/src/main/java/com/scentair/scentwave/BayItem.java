@@ -266,6 +266,23 @@ public class BayItem{
         return refreshScreen;
     }
 
+    public Integer getTransform (Integer position) {
+        Integer returnValue = 0;
+        // This is the new mapping protocol
+        if (position==0) {
+            returnValue=1;
+        } else {
+            if (position<12) {
+                // This is the top/odd row
+                returnValue = (position+1) + (position+1) - 1;
+            } else {
+                // This is the even/bottom row
+                returnValue = 24 - (24-position) - (24-position) + 2;
+            }
+        }
+        return returnValue;
+    }
+
     @Override
     public String toString() {
         return "BayItem [bayNumber=" + bayNumber +

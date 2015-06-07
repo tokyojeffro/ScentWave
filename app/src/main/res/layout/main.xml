@@ -5,6 +5,13 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:weightSum="1">
+    <ImageView
+        android:id="@+id/scentairLogo"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:src="@drawable/scentairlogo"
+        android:layout_gravity="center_horizontal"
+        />
     <TextView
         android:id="@+id/current_operator_label"
         android:layout_width="300dp"
@@ -12,6 +19,7 @@
         android:textSize="25dp"
         android:text="Current Operator:"
         android:layout_gravity="left|top"
+        android:layout_below="@id/scentairLogo"
         />
     <TextView
         android:id="@+id/current_operator"
@@ -21,6 +29,7 @@
         android:text="Current Operator:"
         android:layout_toRightOf="@id/current_operator_label"
         android:layout_gravity="right|top"
+        android:layout_below="@id/scentairLogo"
         />
     <TextView
         android:id="@+id/touch_1"
@@ -60,6 +69,7 @@
             android:layout_gravity="center"
             android:textSize="30dp"
             android:onClick="startChangeOperator"
+            android:layout_marginTop="60dp"
             />
         <Button
             android:id="@+id/StartTestButton"

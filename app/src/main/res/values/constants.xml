@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <integer name="NUMBER_OF_RACKS">2</integer>
-    <integer name="PHIDGET_DATA_RATE">600</integer>
-    <integer name="PHIDGET_SENSOR_CHANGE_TRIGGER">12</integer>
+    <integer name="PHIDGET_DATA_RATE">300</integer>
+    <integer name="PHIDGET_SENSOR_CHANGE_TRIGGER">3</integer>
     <bool name="PHIDGET_RATIO_METRIC">true</bool>
     <integer-array name="POP_UP_FAN_SPEEDS">
         <item>41</item>
@@ -28,4 +28,5 @@
     <string name="SCENTAIR_BARCODE_CHECK">.00</string>
     <string name="MITEC_BARCODE_CHECK">REV</string>
     <integer name="FAN_MODE_WAIT_TIME">2</integer>
+    <integer name="LED_BLINK_TIMER">500</integer>
 </resources>
