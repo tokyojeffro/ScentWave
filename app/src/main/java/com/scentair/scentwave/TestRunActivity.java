@@ -610,6 +610,8 @@ public class TestRunActivity extends Activity implements customButtonListener {
             if (testRun.currentTestStep!=5) {
                 // We don't need anything to blink on step 5
                 // We already have a timer
+                // Clean out any old requests so we only have one active at a time
+                timerHandler.removeCallbacks(timerRunnable);
                 timerHandler.post(timerRunnable);
             } else {
                 // test step 5, turn off timer
@@ -749,8 +751,17 @@ public class TestRunActivity extends Activity implements customButtonListener {
     private void toggleLED () {
         // Figure out the next active bay
         Integer i=0;
-        while ((testRun.bayItems[i].lcdState!="ON") && (i<rack.numberOfBays)){
-            i++;
+        Boolean exit=false;
+        while (!exit) {
+            if (i>=rack.numberOfBays) {
+                exit = true;
+            } else {
+                if (testRun.bayItems[i].lcdState.equals("ON")) {
+                    exit = true;
+                } else {
+                    i++;
+                }
+            }
         }
         if (i<rack.numberOfBays) {
             Boolean oldState;
