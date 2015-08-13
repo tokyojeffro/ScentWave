@@ -118,6 +118,7 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
                     case "Pass":
                         // The criteria for pass are met, enable the button and set the color to green
                         holder.passButton.setBackgroundColor(passReadyColor);
+                        holder.passButton.setText("Pass");
                         break;
                     case "Passed":
                         // Little bit of a hack to mark the row as pass if the test for this bay is done

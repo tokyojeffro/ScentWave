@@ -56,10 +56,9 @@ public class TestRunActivity extends Activity implements customButtonListener {
     // These are used to save the current state of the test run to prefs
     private String testRunSavedState;
     private Gson gson;
-    private Integer LEDBlinkTimer;
-
 
     //A timer that posts itself at the end of the runnable
+    private Integer LEDBlinkTimer;
     Handler timerHandler = new Handler();
     Runnable timerRunnable = new Runnable() {
         @Override
@@ -69,6 +68,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
             timerHandler.postDelayed(this,LEDBlinkTimer);
         }
     };
+
 
     /** Called when the activity is first created. */
     @Override
@@ -131,7 +131,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 testRun.bayItems[position].isFailed = false;
                 // Reset tested status
                 testRun.bayItems[position].stepStatus = "Not Tested";
-                testRun.bayItems[position].lcdState = "ON";
+                testRun.bayItems[position].ledState = "ON";
                 updateLED(position,true);
                 break;
             case "Passed":
@@ -220,7 +220,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
         if (testRun.bayItems[position].stepStatus.equals("Passed")) {
             // Toggle back to normal state
             testRun.bayItems[position].stepStatus = "Not Tested";
-            testRun.bayItems[position].lcdState = "ON";
+            testRun.bayItems[position].ledState = "ON";
             updateLED(position,true);
             if (testRun.currentTestStep.equals(1)) {
                 // make sure both barcodes are cleared so they can be reset
@@ -230,7 +230,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
         } else {
         // Here we need an AlertDialog that provides a list of potential failure reasons
             TestStep testStep = testSteps.get(testRun.currentTestStep-1);
-            testRun.bayItems[position].lcdState = "OFF";
+            testRun.bayItems[position].ledState = "OFF";
             final CharSequence[] failureStrings = new CharSequence[testStep.possibleFailures.size()];
             for (int i=0;i<testStep.possibleFailures.size();i++) {
                 Integer failureOffset = testStep.possibleFailures.get(i)-1;
@@ -401,10 +401,10 @@ public class TestRunActivity extends Activity implements customButtonListener {
                     testRun.bayItems[i].isFailed = true;
                     testRun.bayItems[i].failStep = testRun.currentTestStep;
                     testRun.overallUnitsFailed++;
-                    testRun.bayItems[i].lcdState = "OFF";
+                    testRun.bayItems[i].ledState = "OFF";
                 } else if (testRun.bayItems[i].stepStatus.equals("Passed")) {
                     testRun.bayItems[i].stepStatus = "Not Tested";
-                    testRun.bayItems[i].lcdState = "ON";
+                    testRun.bayItems[i].ledState = "ON";
                 }
             } else testRun.bayItems[i].stepStatus = "Inactive";
         }
@@ -438,17 +438,16 @@ public class TestRunActivity extends Activity implements customButtonListener {
                     if (testRun.currentTestStep.equals(5)) {
                         // Special check to see if the cycle test (step 5) has already passed
                         if (!testRun.bayItems[i].cycleTestComplete) {
-                            testRun.bayItems[i].lcdState="ON";
+                            testRun.bayItems[i].ledState="ON";
                             updateLED(i, true);
                             testRun.currentStepUnitsPassed++;
                         } else {
                             // The cycle test has already passed, so mark this bay passed
                             testRun.bayItems[i].stepStatus="Passed";
                             // Turn off readings from that bay
-                            //TODO
                         }
                     } else {
-                        testRun.bayItems[i].lcdState = "ON";
+                        testRun.bayItems[i].ledState = "ON";
                         updateLED(i, true);
                     }
                 }
@@ -489,23 +488,23 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 String returnValue = testRun.bayItems[i].isPassReady(testRun.currentTestStep);
                 if (returnValue.equals("Passed")) {
                     testRun.bayItems[i].stepStatus = "Passed";
-                    testRun.bayItems[i].lcdState = "OFF";
+                    testRun.bayItems[i].ledState = "OFF";
                 }
                 //count up the numbers of passed and failed units
                 if (testRun.bayItems[i].stepStatus.equals("Failed")) {
                     testRun.currentStepUnitsFailed = testRun.currentStepUnitsFailed + 1;
-                    testRun.bayItems[i].lcdState = "OFF";
+                    testRun.bayItems[i].ledState = "OFF";
                 }
                 if (testRun.bayItems[i].stepStatus.equals("Passed")) {
                     testRun.currentStepUnitsPassed = testRun.currentStepUnitsPassed + 1;
-                    testRun.bayItems[i].lcdState = "OFF";
+                    testRun.bayItems[i].ledState = "OFF";
                 }
                 if (testRun.bayItems[i].stepStatus.equals("Failed previous step")) {
                     testRun.overallUnitsFailed = testRun.overallUnitsFailed + 1;
-                    testRun.bayItems[i].lcdState = "OFF";
+                    testRun.bayItems[i].ledState = "OFF";
                 }
                 Boolean turnOn = false;
-                if (testRun.bayItems[i].lcdState.equals("ON")) turnOn=true;
+                if (testRun.bayItems[i].ledState.equals("ON")) turnOn=true;
                 updateLED(i, turnOn);
             }
         }
@@ -707,33 +706,50 @@ public class TestRunActivity extends Activity implements customButtonListener {
     public void onMitecBarCodeFocusChangeListener(int position, boolean touchFocusSelect) {
         // Operator has touched a field, shift the edit and focus to that field and clear the others.
         //clear the old edit field because the user has selected this field.
-        if (touchFocusSelect) {
-            for (int i = 0; i < testRun.bayItems.length; i++) {
+        if ( (touchFocusSelect) || (!testRun.bayItems[position].mitecBarcode.isEmpty())) {
+            for (int i = 0; i < position; i++) {
                 testRun.bayItems[i].isEditScentair = false;
                 testRun.bayItems[i].isEditMitec = false;
             }
-            // Clear the field for re-entry
-            testRun.bayItems[position].mitecBarcode = "";
-            testRun.bayItems[position].isEditMitec = true;
-            testRun.bayItems[position].stepStatus="Not Tested";
-            aa.notifyDataSetChanged();
+            // Clear out all barcodes from here out
+            clearBarcodes(position);
         }
     }
     @Override
     public void onScentAirBarCodeFocusChangeListener(int position, boolean touchFocusSelect) {
         //clear the old edit field because the user has selected this field.
-        if (touchFocusSelect) {
-            for (int i = 0; i < testRun.bayItems.length; i++) {
+        if ( (touchFocusSelect) || (!testRun.bayItems[position].scentairBarcode.isEmpty())) {
+            for (int i = 0; i < position; i++) {
                 testRun.bayItems[i].isEditScentair = false;
                 testRun.bayItems[i].isEditMitec = false;
             }
-            // Check to see if something else was entered.  If so, clear it
-            testRun.bayItems[position].scentairBarcode = "";
-            testRun.bayItems[position].isEditScentair = true;
-            testRun.bayItems[position].stepStatus="Not Tested";
-            aa.notifyDataSetChanged();
+
+            // Clear out all barcodes from here out
+            clearBarcodes(position);
         }
     }
+    private void clearBarcodes (int position) {
+        Integer nextBay=-1;
+        for (int i = position; i < testRun.bayItems.length; i++) {
+            testRun.bayItems[i].isEditScentair = false;
+            testRun.bayItems[i].isEditMitec = false;
+            // Clear any previously entered barcodes from this point on and reset test state
+            testRun.bayItems[i].scentairBarcode = "";
+            testRun.bayItems[i].mitecBarcode = "";
+            testRun.bayItems[i].ledState="ON";
+            testRun.bayItems[i].stepStatus="Not Tested";
+        }
+        // Set the focus back to the first incorrect bay, mitec field
+        testRun.bayItems[position].isEditMitec = true;
+        nextBay = testRun.setNextBarcodeEditField();
+
+        updateCounts();
+        if (!nextBay.equals(-1)) {
+            listView.setSelection(nextBay);
+        }
+        aa.notifyDataSetChanged();
+    }
+
     private void updateLED (Integer bayNumber, Boolean turnOn) {
         // This function figures out the correct phidget and offset, then sets the toggle value
         Integer phidgetOffset = bayNumber/8;
@@ -756,7 +772,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
             if (i>=rack.numberOfBays) {
                 exit = true;
             } else {
-                if (testRun.bayItems[i].lcdState.equals("ON")) {
+                if (testRun.bayItems[i].ledState.equals("ON")) {
                     exit = true;
                 } else {
                     i++;

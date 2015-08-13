@@ -30,7 +30,7 @@ public class BayItem{
     public Boolean cycleTestComplete=false;
     public Date lastOffTime;
     private String oldUnitState;
-    public String lcdState;
+    public String ledState;
     private Integer oldCurrentValue;
 
     //Constructor used for beginning a test run
@@ -57,7 +57,7 @@ public class BayItem{
         this.lastOffTime = new Date();
         this.cycleTestComplete=false;
         this.fanMedDisplayValue="";
-        this.lcdState="ON";
+        this.ledState="ON";
     }
 
     public String isPassReady(Integer testNumber) {
@@ -159,8 +159,8 @@ public class BayItem{
                         } else {
                             // If it isn't the first time through, check the time we have been on this value
                             Long difference = newValueUpdateTime.getTime() - lowValueTimestamp.getTime();
-                            if (difference>1000*2) {
-                                // If this low value has been active for 2 seconds or more
+                            if (oldCurrentValue.equals(newValue)) {
+                                // If this low value has been active for 1 second
                                 // save the last value stored
                                 lowValue = oldCurrentValue;
                                 lowValueTimestamp=null;
@@ -178,8 +178,8 @@ public class BayItem{
                         } else {
                             // If it isn't the first time through, check the time we have been on this value
                             Long difference = newValueUpdateTime.getTime() - medValueTimestamp.getTime();
-                            if (difference>1000*2) {
-                                // If this low value has been active for 2 seconds or more
+                            if (oldCurrentValue.equals(newValue)) {
+                                // If this low value has been active for 1 second or more
                                 // save the last value stored
                                 medValue = oldCurrentValue;
                                 medValueTimestamp=null;
@@ -197,8 +197,8 @@ public class BayItem{
                         } else {
                             // If it isn't the first time through, check the time we have been on this value
                             Long difference = newValueUpdateTime.getTime() - highValueTimestamp.getTime();
-                            if (difference>1000*2) {
-                                // If this low value has been active for 2 seconds or more
+                            if (oldCurrentValue.equals(newValue)) {
+                                // If this low value has been active for 1 second
                                 // save the last value stored
                                 highValue = oldCurrentValue;
                                 highValueTimestamp=null;
@@ -246,7 +246,7 @@ public class BayItem{
                                     cycleTestComplete = true;
                                     if (testStepNumber.equals(5)) {
                                         stepStatus = "Passed";
-                                        lcdState = "OFF";
+                                        ledState = "OFF";
                                         refreshScreen = true;
                                     }
                                     break;
@@ -267,7 +267,7 @@ public class BayItem{
     }
 
     public Integer getTransform (Integer position) {
-        Integer returnValue = 0;
+        Integer returnValue;
         // This is the new mapping protocol
         if (position==0) {
             returnValue=1;

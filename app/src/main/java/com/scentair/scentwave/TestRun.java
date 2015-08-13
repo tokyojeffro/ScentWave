@@ -306,7 +306,7 @@ public class TestRun{
 
         // For the last step, write out the linking table records from the data we have parsed and stored
         // First, build the link record objects
-        ArrayList<DataLinkRecord> linkRecords = new ArrayList<>();
+        ArrayList<DataLinkRecord> linkRecords = new ArrayList<DataLinkRecord>();
 
         // For each Unit Test, build a new link record
         Iterator<UnitTest> iterator = testResult.unitTests.iterator();

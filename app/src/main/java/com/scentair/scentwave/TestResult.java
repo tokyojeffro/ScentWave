@@ -43,7 +43,7 @@ public class TestResult {
         stepStartTimes=new Date[numberOfTestSteps];
         stepEndTimes= new Date[numberOfTestSteps];
 
-        this.unitTests = new ArrayList<>();
+        this.unitTests = new ArrayList<UnitTest>();
         this.comments="";
     }
 
