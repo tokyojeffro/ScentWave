@@ -28,7 +28,7 @@ public class MachineStates{
 
         // Unplugged range
         initRange.min=-5;
-        initRange.max=9;
+        initRange.max=4;
         initRange.state="Unplugged";
 
         for (int i=initRange.min;i<=initRange.max;i++) {
@@ -36,8 +36,8 @@ public class MachineStates{
         }
 
         //Machine On, Backlight Off, Fan Off range
-        initRange.min=10;
-        initRange.max=29;
+        initRange.min=5;
+        initRange.max=10;
         initRange.state="BackLight Off";
 
         for (int i=initRange.min;i<=initRange.max;i++) {
@@ -45,8 +45,8 @@ public class MachineStates{
         }
 
         //Machine On, Backlight On, Fan Off range
-        initRange.min=30;
-        initRange.max=45;
+        initRange.min=11;
+        initRange.max=35;
         initRange.state="BackLight On";
 
         for (int i=initRange.min;i<=initRange.max;i++) {
@@ -54,7 +54,7 @@ public class MachineStates{
         }
 
         //Machine On, Fan powering up from off range
-        initRange.min=46;
+        initRange.min=36;
         initRange.max=130;
         initRange.state="FanTurnOn";
 
@@ -64,7 +64,7 @@ public class MachineStates{
 
         //Fan at low range
         initRange.min=131;
-        initRange.max=200;
+        initRange.max=218;
         initRange.state="Low";
 
         for (int i=initRange.min;i<=initRange.max;i++) {
@@ -72,7 +72,7 @@ public class MachineStates{
         }
 
         //Fan between low and med range
-        initRange.min=201;
+        initRange.min=219;
         initRange.max=220;
         initRange.state="Low to Medium";
 
@@ -82,7 +82,7 @@ public class MachineStates{
 
         //Fan medium range
         initRange.min=221;
-        initRange.max=350;
+        initRange.max=407;
         initRange.state="Medium";
 
         for (int i=initRange.min;i<=initRange.max;i++) {
@@ -90,8 +90,8 @@ public class MachineStates{
         }
 
         //Fan medium to high range
-        initRange.min=351;
-        initRange.max=400;
+        initRange.min=408;
+        initRange.max=409;
         initRange.state="Medium to High";
 
         for (int i=initRange.min;i<=initRange.max;i++) {
@@ -99,7 +99,7 @@ public class MachineStates{
         }
 
         //Fan high range
-        initRange.min=401;
+        initRange.min=410;
         initRange.max=579;
         initRange.state="High";
 
