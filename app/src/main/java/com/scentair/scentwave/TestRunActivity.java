@@ -428,6 +428,49 @@ public class TestRunActivity extends Activity implements customButtonListener {
             postTestResults();
             //close this activity
             finish();
+        } else if (testRun.currentTestStep.equals(1)) {
+            // finished reading the barcodes
+            // Need to start the phidget reading callbacks now
+            // add the phidget interface stuff for the real time value.
+            try {
+                for (int i=0;i<rack.numberOfPhidgetsPerRack;i++) {
+                    rack.phidgets[i].phidget.addAttachListener(new AttachListener() {
+                        public void attached(final AttachEvent ae) {
+                            AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), true);
+                            synchronized (handler) {
+                                runOnUiThread(handler);
+                                try {
+                                    handler.wait();
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    });
+                    rack.phidgets[i].phidget.addDetachListener(new DetachListener() {
+                        public void detached(final DetachEvent ae) {
+                            AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), false);
+                            synchronized (handler) {
+                                runOnUiThread(handler);
+                                try {
+                                    handler.wait();
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    });
+                    final int finalI = i;
+                    rack.phidgets[i].phidget.addSensorChangeListener(new SensorChangeListener() {
+                        public void sensorChanged(SensorChangeEvent se) {
+                            runOnUiThread(new SensorChangeRunnable(finalI, se.getIndex(), se.getValue()));
+                        }
+                    });
+                    rack.phidgets[i].phidget.open(rack.phidgets[i].phidgetSerialNumber, phidgetServerAddress, 5001);
+                }
+            } catch (PhidgetException pe) {
+                pe.printStackTrace();
+            }
         }
         else {
             // There is at least one more step left in this run
@@ -885,46 +928,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 // Check the first bay
                 Integer targetBay = testRun.setNextBarcodeEditField();
                 listView.setSelection(targetBay);
-            }
-            // add the phidget interface stuff for the real time value.
-            try {
-                for (int i=0;i<rack.numberOfPhidgetsPerRack;i++) {
-                    rack.phidgets[i].phidget.addAttachListener(new AttachListener() {
-                        public void attached(final AttachEvent ae) {
-                            AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), true);
-                            synchronized (handler) {
-                                runOnUiThread(handler);
-                                try {
-                                    handler.wait();
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }
-                    });
-                    rack.phidgets[i].phidget.addDetachListener(new DetachListener() {
-                        public void detached(final DetachEvent ae) {
-                            AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), false);
-                            synchronized (handler) {
-                                runOnUiThread(handler);
-                                try {
-                                    handler.wait();
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }
-                    });
-                    final int finalI = i;
-                    rack.phidgets[i].phidget.addSensorChangeListener(new SensorChangeListener() {
-                        public void sensorChanged(SensorChangeEvent se) {
-                            runOnUiThread(new SensorChangeRunnable(finalI, se.getIndex(), se.getValue()));
-                        }
-                    });
-                    rack.phidgets[i].phidget.open(rack.phidgets[i].phidgetSerialNumber, phidgetServerAddress, 5001);
-                }
-            } catch (PhidgetException pe) {
-                pe.printStackTrace();
             }
             updateCounts();
             updateView();
