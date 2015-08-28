@@ -428,7 +428,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
             postTestResults();
             //close this activity
             finish();
-        } else if (testRun.currentTestStep.equals(1)) {
+        } else if (testRun.currentTestStep.equals(2)) {
             // finished reading the barcodes
             // Need to start the phidget reading callbacks now
             // add the phidget interface stuff for the real time value.
