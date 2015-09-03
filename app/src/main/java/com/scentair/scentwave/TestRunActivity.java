@@ -419,6 +419,44 @@ public class TestRunActivity extends Activity implements customButtonListener {
         testRun.testResult.setEndTime(testRun.currentTestStep-1);
         // go to next step
         testRun.currentTestStep++;
+
+        if (testRun.currentTestStep.equals(2)) {
+            // finished reading the barcodes
+            // Need to start the phidget reading callbacks now
+            // add the phidget interface stuff for the real time value.
+            Integer sensorChangeTrigger = resources.getInteger(R.integer.PHIDGET_SENSOR_CHANGE_TRIGGER);
+            Integer dataRate = resources.getInteger(R.integer.PHIDGET_DATA_RATE);
+            Boolean ratioMetric = resources.getBoolean(R.bool.PHIDGET_RATIO_METRIC);
+
+            try {
+                if (rack.phidgets[0].phidget.isAttached()) {
+                    for (int i = 0; i < 8; i++) {
+                        rack.phidgets[0].phidget.setDataRate(i, dataRate);
+                        rack.phidgets[0].phidget.setSensorChangeTrigger(i, sensorChangeTrigger);
+                    }
+                    rack.phidgets[0].phidget.setRatiometric(false);
+                }
+
+                if (rack.phidgets[1].phidget.isAttached()) {
+                    for (int i = 0; i < 8; i++) {
+                        rack.phidgets[1].phidget.setDataRate(i, dataRate);
+                        rack.phidgets[1].phidget.setSensorChangeTrigger(i, sensorChangeTrigger);
+                    }
+                    rack.phidgets[1].phidget.setRatiometric(false);
+                }
+
+                if (rack.phidgets[2].phidget.isAttached()) {
+                    for (int i = 0; i < 8; i++) {
+                        rack.phidgets[2].phidget.setDataRate(i, dataRate);
+                        rack.phidgets[2].phidget.setSensorChangeTrigger(i, sensorChangeTrigger);
+                    }
+                    rack.phidgets[2].phidget.setRatiometric(ratioMetric);
+                }
+            } catch (PhidgetException pe) {
+                pe.printStackTrace();
+            }
+        }
+
         // Check if that is the end of the steps and end of this run
         if (testRun.currentTestStep>testRun.maxTestSteps)
         {
@@ -428,51 +466,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
             postTestResults();
             //close this activity
             finish();
-        } else if (testRun.currentTestStep.equals(2)) {
-            // finished reading the barcodes
-            // Need to start the phidget reading callbacks now
-            // add the phidget interface stuff for the real time value.
-            try {
-                for (int i=0;i<rack.numberOfPhidgetsPerRack;i++) {
-                    rack.phidgets[i].phidget.addAttachListener(new AttachListener() {
-                        public void attached(final AttachEvent ae) {
-                            AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), true);
-                            synchronized (handler) {
-                                runOnUiThread(handler);
-                                try {
-                                    handler.wait();
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }
-                    });
-                    rack.phidgets[i].phidget.addDetachListener(new DetachListener() {
-                        public void detached(final DetachEvent ae) {
-                            AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), false);
-                            synchronized (handler) {
-                                runOnUiThread(handler);
-                                try {
-                                    handler.wait();
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }
-                    });
-                    final int finalI = i;
-                    rack.phidgets[i].phidget.addSensorChangeListener(new SensorChangeListener() {
-                        public void sensorChanged(SensorChangeEvent se) {
-                            runOnUiThread(new SensorChangeRunnable(finalI, se.getIndex(), se.getValue()));
-                        }
-                    });
-                    rack.phidgets[i].phidget.open(rack.phidgets[i].phidgetSerialNumber, phidgetServerAddress, 5001);
-                }
-            } catch (PhidgetException pe) {
-                pe.printStackTrace();
-            }
-        }
-        else {
+        } else {
             // There is at least one more step left in this run
             returnValue=true;
             // Turn the bay lights back on
@@ -682,13 +676,23 @@ public class TestRunActivity extends Activity implements customButtonListener {
     class AttachDetachRunnable implements Runnable {
         Phidget phidget;
         boolean attach;
-        public AttachDetachRunnable(Phidget phidget, boolean attach)
+        public AttachDetachRunnable(Phidget phidget, boolean attach, Boolean startUp)
         {
             this.phidget = phidget;
             this.attach = attach;
-            Integer sensorChangeTrigger = resources.getInteger(R.integer.PHIDGET_SENSOR_CHANGE_TRIGGER);
-            Integer dataRate = resources.getInteger(R.integer.PHIDGET_DATA_RATE);
-            Boolean ratioMetric = resources.getBoolean(R.bool.PHIDGET_RATIO_METRIC);
+            Integer sensorChangeTrigger;
+            Integer dataRate;
+            Boolean ratioMetric;
+            if (startUp) {
+                sensorChangeTrigger = resources.getInteger(R.integer.PHIDGET_SENSOR_CHANGE_TRIGGER_START);
+                dataRate = resources.getInteger(R.integer.PHIDGET_DATA_RATE_START);
+                ratioMetric = resources.getBoolean(R.bool.PHIDGET_RATIO_METRIC);
+            } else {
+                sensorChangeTrigger = resources.getInteger(R.integer.PHIDGET_SENSOR_CHANGE_TRIGGER);
+                dataRate = resources.getInteger(R.integer.PHIDGET_DATA_RATE);
+                ratioMetric = resources.getBoolean(R.bool.PHIDGET_RATIO_METRIC);
+            }
+
             try {
                 if (phidget.isAttached()) {
                     if (phidget==rack.phidgets[0].phidget) {
@@ -766,26 +770,26 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 testRun.bayItems[i].isEditScentair = false;
                 testRun.bayItems[i].isEditMitec = false;
             }
-
             // Clear out all barcodes from here out
             clearBarcodes(position);
         }
     }
     private void clearBarcodes (int position) {
         Integer nextBay=-1;
-        for (int i = position; i < testRun.bayItems.length; i++) {
-            testRun.bayItems[i].isEditScentair = false;
-            testRun.bayItems[i].isEditMitec = false;
-            // Clear any previously entered barcodes from this point on and reset test state
-            testRun.bayItems[i].scentairBarcode = "";
-            testRun.bayItems[i].mitecBarcode = "";
-            testRun.bayItems[i].ledState="ON";
-            testRun.bayItems[i].stepStatus="Not Tested";
+        if (position<testRun.bayItems.length-1) {
+            for (int i = position; i < testRun.bayItems.length; i++) {
+                testRun.bayItems[i].isEditScentair = false;
+                testRun.bayItems[i].isEditMitec = false;
+                // Clear any previously entered barcodes from this point on and reset test state
+                testRun.bayItems[i].scentairBarcode = "";
+                testRun.bayItems[i].mitecBarcode = "";
+                testRun.bayItems[i].ledState = "ON";
+                testRun.bayItems[i].stepStatus = "Not Tested";
+            }
+            // Set the focus back to the first incorrect bay, mitec field
+            testRun.bayItems[position].isEditMitec = true;
+            nextBay = testRun.setNextBarcodeEditField();
         }
-        // Set the focus back to the first incorrect bay, mitec field
-        testRun.bayItems[position].isEditMitec = true;
-        nextBay = testRun.setNextBarcodeEditField();
-
         updateCounts();
         if (!nextBay.equals(-1)) {
             listView.setSelection(nextBay);
@@ -921,6 +925,48 @@ public class TestRunActivity extends Activity implements customButtonListener {
             }
             aa= new BayItemArrayAdapter(context, testRun);
             aa.setCustomButtonListener(TestRunActivity.this);
+
+            // need to initialize the phidgets to control the LED lights
+            try {
+                for (int i=0;i<rack.numberOfPhidgetsPerRack;i++) {
+                    rack.phidgets[i].phidget.addAttachListener(new AttachListener() {
+                        public void attached(final AttachEvent ae) {
+                            AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), true, true);
+                            synchronized (handler) {
+                                runOnUiThread(handler);
+                                try {
+                                    handler.wait();
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    });
+                    rack.phidgets[i].phidget.addDetachListener(new DetachListener() {
+                        public void detached(final DetachEvent ae) {
+                            AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), false, true);
+                            synchronized (handler) {
+                                runOnUiThread(handler);
+                                try {
+                                    handler.wait();
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    });
+                    final int finalI = i;
+                    rack.phidgets[i].phidget.addSensorChangeListener(new SensorChangeListener() {
+                        public void sensorChanged(SensorChangeEvent se) {
+                            runOnUiThread(new SensorChangeRunnable(finalI, se.getIndex(), se.getValue()));
+                        }
+                    });
+                    rack.phidgets[i].phidget.open(rack.phidgets[i].phidgetSerialNumber, phidgetServerAddress, 5001);
+                }
+            } catch (PhidgetException pe) {
+                pe.printStackTrace();
+            }
+
             listView.setAdapter(aa);
             if (resume) listView.smoothScrollToPosition(testRun.currentBay);
             if (testRun.currentTestStep.equals(1)) {

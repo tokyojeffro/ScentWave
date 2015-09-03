@@ -2,7 +2,9 @@
 <resources>
     <integer name="NUMBER_OF_RACKS">2</integer>
     <integer name="PHIDGET_DATA_RATE">1000</integer>
+    <integer name="PHIDGET_DATA_RATE_START">1000</integer>
     <integer name="PHIDGET_SENSOR_CHANGE_TRIGGER">0</integer>
+    <integer name="PHIDGET_SENSOR_CHANGE_TRIGGER_START">40</integer>
     <bool name="PHIDGET_RATIO_METRIC">true</bool>
     <integer-array name="POP_UP_FAN_SPEEDS">
         <item>41</item>

@@ -38,7 +38,7 @@ public class BayItem{
         this.bayNumber=bayNumber;
         this.mitecBarcode = "";
         this.scentairBarcode = "";
-        this.currentValue = -50;
+        this.currentValue = 0;
         this.oldCurrentValue= -50;
         this.stepStatus = "Not Tested";
         this.unitState = "Unplugged";
@@ -219,12 +219,17 @@ public class BayItem{
                 // Check to see if the cycle timer has already passed
                 // If so, ignore this
                 if (!cycleTestComplete) {
-                    if (oldUnitState.equals("Low") && (
+                    if ((oldUnitState.equals("Low") ||
+                            (oldUnitState.equals("Medium") ||
+                                    (oldUnitState.equals("High") ||
+                                            (oldUnitState.equals("Medium to High") ||
+                                                    (oldUnitState.equals("Low to Medium"))))
+                    ) && (
                             unitState.equals("BackLight Off") ||
                                     unitState.equals("BackLight On") ||
                                     unitState.equals("Off") ||
-                                    unitState.equals("FanTurnOn"))) {
-                        // We have toggled from Low to Off (in some form)
+                                    unitState.equals("FanTurnOn")))) {
+                        // We have toggled from On to Off (in some form)
                         // Save the timestamp info for future reference
                         if (lastOffTime != null) {
                             // Check the difference here
