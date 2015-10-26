@@ -30,6 +30,7 @@ import com.scentair.scentwave.BayItemArrayAdapter.customButtonListener;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.Date;
 
 public class TestRunActivity extends Activity implements customButtonListener {
     public static final String TAG_SAVED_TEST_RUN="SAVED_TEST_RUN";
@@ -51,8 +52,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
     private Button completeStepButton;
     private Resources resources;
     private static int[] popUpSpeeds;
-    private String lastScentairBarcode="";
-    private String lastMitecBarcode="";
     // These are used to save the current state of the test run to prefs
     private String testRunSavedState;
     private Gson gson;
@@ -68,8 +67,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
             timerHandler.postDelayed(this,LEDBlinkTimer);
         }
     };
-
-
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -159,8 +156,11 @@ public class TestRunActivity extends Activity implements customButtonListener {
                             })
                             .setView(dialogView)
                             .show();
+                    listView.smoothScrollToPosition(position + 2);
+                } else if (testRun.currentTestStep.equals(1)) {
+                    // need to clear out the barcodes for the last bay entered
+                    clearBarcode();
                 }
-                listView.smoothScrollToPosition(position+2);
                 break;
             case "Pass":
             case "Not Tested":
@@ -188,8 +188,11 @@ public class TestRunActivity extends Activity implements customButtonListener {
                             })
                             .setView(dialogView)
                             .show();
+                    listView.smoothScrollToPosition(position + 2);
+                } else if (testRun.currentTestStep.equals(1)) {
+                    // need to clear out the barcodes for the last bay entered
+                    clearBarcode();
                 }
-                listView.smoothScrollToPosition(position+2);
                 // Check the status of the bay.  Is it pass ready?
                 if (passStatus.equals("Pass")|| (passStatus.equals("Passed"))) {
                     // They have pressed the pass button, the bay thinks it is pass ready.  Pass it.
@@ -197,9 +200,11 @@ public class TestRunActivity extends Activity implements customButtonListener {
                     listView.smoothScrollToPosition(position+2);
                 }
                 break;
+            case "Barcodes not entered":
+                clearBarcode();
+                break;
             case "Machine not plugged in":
             case "Fan speeds not recorded":
-            case "Barcodes not entered":
             default:
                 // The pass button should toggle a fail back to not tested.  If the bay has not failed,
                 // do nothing.
@@ -222,11 +227,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
             testRun.bayItems[position].stepStatus = "Not Tested";
             testRun.bayItems[position].ledState = "ON";
             updateLED(position,true);
-            if (testRun.currentTestStep.equals(1)) {
-                // make sure both barcodes are cleared so they can be reset
-                testRun.bayItems[position].mitecBarcode="";
-                testRun.bayItems[position].scentairBarcode="";
-            }
         } else {
         // Here we need an AlertDialog that provides a list of potential failure reasons
             TestStep testStep = testSteps.get(testRun.currentTestStep-1);
@@ -268,35 +268,27 @@ public class TestRunActivity extends Activity implements customButtonListener {
         // skip bays that are inactive
         Integer nextBay = -1;
         testRun.bayItems[position].isEditScentair=false;
-        String mitecCheckString = resources.getString(R.string.MITEC_BARCODE_CHECK);
-        String scentairCheckString = resources.getString(R.string.SCENTAIR_BARCODE_CHECK);
+
+        // Added 10/13.  Check to see if the barcode has any '!!!' trash leading.  Sometimes the scanners send trash
+        // Remove any of these characters
+        String cleanText = candidateText.replaceAll("!(\\S+)","");
+        candidateText = cleanText;
+
         // First, check to see if the barcode is a valid scentair barcode
-        if (candidateText.endsWith(scentairCheckString)) {
-            // Now check to make sure they have not re-entered the same scentair barcode
-            if (!candidateText.equals(lastScentairBarcode)) {
-                // This is a valid scentair barcode
-                // Save it into the array
-                // Check to see if the mitec field is also entered for this position, then move focus to the next row mitec field
-                // If the mitec field is not entered, keep the focus on this row.
-                testRun.bayItems[position].scentairBarcode=candidateText;
-                nextBay = testRun.setNextBarcodeEditField();
-                // Make sure we keep track of the last valid scentair barcode
-                lastScentairBarcode=candidateText;
-            } else {
-                // The same barcode was entered twice in a row, keep the focus here
-                testRun.bayItems[position].isEditScentair=true;
-            }
-        } else if (candidateText.contains(mitecCheckString)) {
-            // Now check to make sure this is not a duplicate of the last mitec barcode
-            if (!candidateText.equals(lastMitecBarcode)) {
-                // This is a valid Mitec barcode.  Put it where it belongs and keep focus here.
-                testRun.bayItems[position].mitecBarcode=candidateText;
-                nextBay = testRun.setNextBarcodeEditField();
-                lastMitecBarcode=candidateText;
-            } else {
-                // Keep it here, dupes are not allowed
-                testRun.bayItems[position].isEditScentair=true;
-            }
+        if (checkScentAirSerialNumber(candidateText)) {
+            // This is a valid scentair barcode
+            // Save it into the array
+            // Check to see if the mitec field is also entered for this position, then move focus to the next row mitec field
+            // If the mitec field is not entered, keep the focus on this row.
+            testRun.bayItems[position].scentairBarcode=candidateText;
+            nextBay = testRun.setNextBarcodeEditField();
+            // Make sure this field has lost focus because the barcode is good
+            testRun.bayItems[position].isEditScentair=false;
+        } else if (checkMitecSerialNumber(candidateText)) {
+            // This is a valid Mitec barcode.  Put it where it belongs and keep focus here.
+            testRun.bayItems[position].mitecBarcode=candidateText;
+            nextBay = testRun.setNextBarcodeEditField();
+            testRun.bayItems[position].isEditScentair=true;
         } else {
             // This is not a valid barcode for either type.  Keep focus here
             testRun.bayItems[position].isEditScentair=true;
@@ -314,33 +306,27 @@ public class TestRunActivity extends Activity implements customButtonListener {
         // need to move focus and cursor to scentair barcode
         Integer nextBay = -1;
         testRun.bayItems[position].isEditMitec=false;
-        String mitecCheckString = resources.getString(R.string.MITEC_BARCODE_CHECK);
-        String scentairCheckString = resources.getString(R.string.SCENTAIR_BARCODE_CHECK);
+
+        // Added 10/13.  Check to see if the barcode has any '!!!' trash leading.  Sometimes the scanners send trash
+        // Remove any of these characters
+        String cleanText = candidateText.replaceAll("!(\\S+)","");
+        candidateText = cleanText;
+
         // First, check to see if the barcode is a valid scentair barcode
-        if (candidateText.contains(mitecCheckString)) {
-            // Check for duplicate entry
-            if (!candidateText.equals(lastMitecBarcode)) {
-                // This is a valid mitec barcode
-                // Save it into the array
-                // Check to see if the scentair field is also entered for this position, if not, move focus to that
-                // if there is a scentair code already entered, move to next active bay mitec field.
-                testRun.bayItems[position].mitecBarcode=candidateText;
-                nextBay = testRun.setNextBarcodeEditField();
-                lastMitecBarcode=candidateText;
-            } else {
-                // Dupes are not allowed, keep focus here
-                testRun.bayItems[position].isEditMitec=true;
-            }
-        } else if (candidateText.endsWith(scentairCheckString)) {
-            if (!candidateText.equals(lastScentairBarcode)) {
-                // This is a valid scentair barcode.  Put it where it belongs and keep focus here.
-                testRun.bayItems[position].scentairBarcode=candidateText;
-                nextBay = testRun.setNextBarcodeEditField();
-                lastScentairBarcode=candidateText;
-            } else {
-                // Dupes are not allowed, keep the focus here.
-                testRun.bayItems[position].isEditMitec=true;
-            }
+        if (checkMitecSerialNumber(candidateText)) {
+            // This is a valid mitec barcode
+            // Save it into the array
+            // Check to see if the scentair field is also entered for this position, if not, move focus to that
+            // if there is a scentair code already entered, move to next active bay mitec field.
+            testRun.bayItems[position].mitecBarcode=candidateText;
+            nextBay = testRun.setNextBarcodeEditField();
+            // Make sure this field loses focus since we have a good entry
+            testRun.bayItems[position].isEditMitec=false;
+        } else if (checkScentAirSerialNumber(candidateText)) {
+            // This is a valid scentair barcode.  Put it where it belongs and keep focus here.
+            testRun.bayItems[position].scentairBarcode=candidateText;
+            nextBay = testRun.setNextBarcodeEditField();
+            testRun.bayItems[position].isEditMitec=true;
         } else {
             // This is not a valid barcode for either type.  Keep focus here
             testRun.bayItems[position].isEditMitec=true;
@@ -350,6 +336,31 @@ public class TestRunActivity extends Activity implements customButtonListener {
             listView.setSelection(nextBay);
         }
         aa.notifyDataSetChanged();
+    }
+    private boolean checkScentAirSerialNumber(String candidateText) {
+        boolean returnValue = false;
+        String scentairCheckString = resources.getString(R.string.SCENTAIR_BARCODE_CHECK);
+        // First check is to make sure the string ends with ".00"
+        if (candidateText.endsWith(scentairCheckString)) {
+            // If the string is terminated properly, check that the number of characters is '13'
+            if (candidateText.length()>=12) {
+                // Barcode ends properly with the correct length.  Looks good.
+                returnValue=true;
+            }  // Else keep focus here until we get a good value
+        }  // else keep focus here until we get a good value
+        return returnValue;
+    }
+    private boolean checkMitecSerialNumber(String candidateText) {
+        boolean returnValue = false;
+        String mitecCheckString = resources.getString(R.string.MITEC_BARCODE_CHECK);
+        //Mitec codes contain the 3 letters "REV" in that order.
+        if (candidateText.contains(mitecCheckString)) {
+            // Also check the length of the string.  Mitec codes contain 10 characters
+            if (candidateText.length()>=10) {
+                returnValue=true;
+            } // Else keep focus on this field until we get a valid value
+        }  // Else keep focus on this field until we get a valid value
+        return returnValue;
     }
     private void completeTestStep () {
         // This is the only way to finish this step and move to the next step
@@ -421,40 +432,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
         testRun.currentTestStep++;
 
         if (testRun.currentTestStep.equals(2)) {
-            // finished reading the barcodes
-            // Need to start the phidget reading callbacks now
-            // add the phidget interface stuff for the real time value.
-            Integer sensorChangeTrigger = resources.getInteger(R.integer.PHIDGET_SENSOR_CHANGE_TRIGGER);
-            Integer dataRate = resources.getInteger(R.integer.PHIDGET_DATA_RATE);
-            Boolean ratioMetric = resources.getBoolean(R.bool.PHIDGET_RATIO_METRIC);
-
-            try {
-                if (rack.phidgets[0].phidget.isAttached()) {
-                    for (int i = 0; i < 8; i++) {
-                        rack.phidgets[0].phidget.setDataRate(i, dataRate);
-                        rack.phidgets[0].phidget.setSensorChangeTrigger(i, sensorChangeTrigger);
-                    }
-                    rack.phidgets[0].phidget.setRatiometric(false);
-                }
-
-                if (rack.phidgets[1].phidget.isAttached()) {
-                    for (int i = 0; i < 8; i++) {
-                        rack.phidgets[1].phidget.setDataRate(i, dataRate);
-                        rack.phidgets[1].phidget.setSensorChangeTrigger(i, sensorChangeTrigger);
-                    }
-                    rack.phidgets[1].phidget.setRatiometric(false);
-                }
-
-                if (rack.phidgets[2].phidget.isAttached()) {
-                    for (int i = 0; i < 8; i++) {
-                        rack.phidgets[2].phidget.setDataRate(i, dataRate);
-                        rack.phidgets[2].phidget.setSensorChangeTrigger(i, sensorChangeTrigger);
-                    }
-                    rack.phidgets[2].phidget.setRatiometric(ratioMetric);
-                }
-            } catch (PhidgetException pe) {
-                pe.printStackTrace();
-            }
+            updatePhidgetSettings();
         }
 
         // Check if that is the end of the steps and end of this run
@@ -692,7 +670,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 dataRate = resources.getInteger(R.integer.PHIDGET_DATA_RATE);
                 ratioMetric = resources.getBoolean(R.bool.PHIDGET_RATIO_METRIC);
             }
-
             try {
                 if (phidget.isAttached()) {
                     if (phidget==rack.phidgets[0].phidget) {
@@ -742,54 +719,48 @@ public class TestRunActivity extends Activity implements customButtonListener {
             if (rack.bays!=null) {
                 updatedValue = sensorVal + rack.bays[bayValue].calibrationOffset;
             }
-            Boolean refreshScreen = testRun.bayItems[bayValue].updateValue(updatedValue,testRun.currentTestStep);
+            Boolean refreshScreen = testRun.bayItems[bayValue].updateValue(updatedValue,testRun.currentTestStep,context);
             aa.notifyDataSetChanged();
             if (refreshScreen) {
                 updateCounts();
             }
         }
     }
-    @Override
-    public void onMitecBarCodeFocusChangeListener(int position, boolean touchFocusSelect) {
-        // Operator has touched a field, shift the edit and focus to that field and clear the others.
-        //clear the old edit field because the user has selected this field.
-        if ( (touchFocusSelect) || (!testRun.bayItems[position].mitecBarcode.isEmpty())) {
-            for (int i = 0; i < position; i++) {
-                testRun.bayItems[i].isEditScentair = false;
-                testRun.bayItems[i].isEditMitec = false;
+    private void clearBarcode () {
+        // Need to find the last bay with a barcode or a partial barcode
+        // Then delete the data from that bay and put the focus there.
+        Integer nextBay = testRun.setNextBarcodeEditField();
+        Integer targetBay;
+        // Return cases:
+        // All bays are full.  Erase the last bay
+        // No bays are full.  Keep cursor at first bay.
+        // Bay is partially full.  Erase that bay and keep current location.  Set field to mitec
+        // at least one bay is full, current bay is empty.  Erase last bay with data and move to mitec field.
+
+        if (nextBay.equals(-1)) {
+            // All bays are full
+            // Set the last bay as the target
+            targetBay = testRun.bayItems.length - 1;
+        } else {
+            // Whichever bay returned is what we should look at
+            targetBay = nextBay;
+            if ( testRun.bayItems[nextBay].mitecBarcode.equals("") && testRun.bayItems[nextBay].scentairBarcode.equals("")) {
+                // The current bay is empty, back it up one if possible
+                if (!targetBay.equals(0)) {
+                    targetBay = targetBay - 1;
+                }
             }
-            // Clear out all barcodes from here out
-            clearBarcodes(position);
         }
-    }
-    @Override
-    public void onScentAirBarCodeFocusChangeListener(int position, boolean touchFocusSelect) {
-        //clear the old edit field because the user has selected this field.
-        if ( (touchFocusSelect) || (!testRun.bayItems[position].scentairBarcode.isEmpty())) {
-            for (int i = 0; i < position; i++) {
-                testRun.bayItems[i].isEditScentair = false;
-                testRun.bayItems[i].isEditMitec = false;
-            }
-            // Clear out all barcodes from here out
-            clearBarcodes(position);
-        }
-    }
-    private void clearBarcodes (int position) {
-        Integer nextBay=-1;
-        if (position<testRun.bayItems.length-1) {
-            for (int i = position; i < testRun.bayItems.length; i++) {
-                testRun.bayItems[i].isEditScentair = false;
-                testRun.bayItems[i].isEditMitec = false;
-                // Clear any previously entered barcodes from this point on and reset test state
-                testRun.bayItems[i].scentairBarcode = "";
-                testRun.bayItems[i].mitecBarcode = "";
-                testRun.bayItems[i].ledState = "ON";
-                testRun.bayItems[i].stepStatus = "Not Tested";
-            }
-            // Set the focus back to the first incorrect bay, mitec field
-            testRun.bayItems[position].isEditMitec = true;
-            nextBay = testRun.setNextBarcodeEditField();
-        }
+        // The first bay is the target bay
+        // Set the field to mitec and clear any values already entered
+        testRun.bayItems[targetBay].isEditMitec=true;
+        testRun.bayItems[targetBay].isEditScentair=false;
+        testRun.bayItems[targetBay].scentairBarcode="";
+        testRun.bayItems[targetBay].mitecBarcode="";
+        testRun.bayItems[targetBay].ledState = "ON";
+        testRun.bayItems[targetBay].stepStatus = "Not Tested";
+        testRun.setNextBarcodeEditField();
+
         updateCounts();
         if (!nextBay.equals(-1)) {
             listView.setSelection(nextBay);
@@ -853,11 +824,30 @@ public class TestRunActivity extends Activity implements customButtonListener {
         @Override
         protected void onPostExecute(String result) {
             // Continue setup after we have loaded the rack info from the DB.
+            Boolean firstStart=true;
             testRun = new TestRun();
             if (resume) {
                 // Get the saved test run from prefs to start on from preferences
-                testRunSavedState = sharedPreferences.getString(TAG_SAVED_TEST_RUN,"");
+                testRunSavedState = sharedPreferences.getString(TAG_SAVED_TEST_RUN, "");
                 testRun = gson.fromJson(testRunSavedState,TestRun.class);
+
+                // Need to check if past step 1.  If so, update the phidget settings.
+                if (testRun.currentTestStep>1) {
+                    firstStart=false;
+                }
+
+                // If we are in step 5, need to clear out the target cycle times since they no longer apply on resume
+                if (testRun.currentTestStep.equals(5)) {
+                    for (int i = 0; i < rack.numberOfBays; i++) {
+                        if ((testRun.bayItems[i].isActive) &&
+                                (!testRun.bayItems[i].isFailed) &&
+                                (!testRun.bayItems[i].cycleTestComplete)) {
+                            // Bay is active, bay still has not passed or failed test yet.
+                            // Reset any timer targets
+                            testRun.bayItems[i].lastOffTime = new Date();
+                        }
+                    }
+                }
                 Toast.makeText(getApplicationContext(), "Test Run Resumed", Toast.LENGTH_LONG).show();
             }
             else {
@@ -928,10 +918,11 @@ public class TestRunActivity extends Activity implements customButtonListener {
 
             // need to initialize the phidgets to control the LED lights
             try {
+                final Boolean startUp = firstStart;
                 for (int i=0;i<rack.numberOfPhidgetsPerRack;i++) {
                     rack.phidgets[i].phidget.addAttachListener(new AttachListener() {
                         public void attached(final AttachEvent ae) {
-                            AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), true, true);
+                            AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), true, startUp);
                             synchronized (handler) {
                                 runOnUiThread(handler);
                                 try {
@@ -944,7 +935,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
                     });
                     rack.phidgets[i].phidget.addDetachListener(new DetachListener() {
                         public void detached(final DetachEvent ae) {
-                            AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), false, true);
+                            AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), false, startUp);
                             synchronized (handler) {
                                 runOnUiThread(handler);
                                 try {
@@ -977,6 +968,42 @@ public class TestRunActivity extends Activity implements customButtonListener {
             }
             updateCounts();
             updateView();
+        }
+    }
+
+    private void updatePhidgetSettings() {
+        // Need to start the phidget reading callbacks now
+        // add the phidget interface stuff for the real time value.
+        Integer sensorChangeTrigger = resources.getInteger(R.integer.PHIDGET_SENSOR_CHANGE_TRIGGER);
+        Integer dataRate = resources.getInteger(R.integer.PHIDGET_DATA_RATE);
+        Boolean ratioMetric = resources.getBoolean(R.bool.PHIDGET_RATIO_METRIC);
+
+        try {
+            if (rack.phidgets[0].phidget.isAttached()) {
+                for (int i = 0; i < 8; i++) {
+                    rack.phidgets[0].phidget.setDataRate(i, dataRate);
+                    rack.phidgets[0].phidget.setSensorChangeTrigger(i, sensorChangeTrigger);
+                }
+                rack.phidgets[0].phidget.setRatiometric(false);
+            }
+
+            if (rack.phidgets[1].phidget.isAttached()) {
+                for (int i = 0; i < 8; i++) {
+                    rack.phidgets[1].phidget.setDataRate(i, dataRate);
+                    rack.phidgets[1].phidget.setSensorChangeTrigger(i, sensorChangeTrigger);
+                }
+                rack.phidgets[1].phidget.setRatiometric(false);
+            }
+
+            if (rack.phidgets[2].phidget.isAttached()) {
+                for (int i = 0; i < 8; i++) {
+                    rack.phidgets[2].phidget.setDataRate(i, dataRate);
+                    rack.phidgets[2].phidget.setSensorChangeTrigger(i, sensorChangeTrigger);
+                }
+                rack.phidgets[2].phidget.setRatiometric(ratioMetric);
+            }
+        } catch (PhidgetException pe) {
+            pe.printStackTrace();
         }
     }
 }

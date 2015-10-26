@@ -23,8 +23,6 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
         void onFailButtonClickListener(int position, int listViewPosition);
         void onScentAirBarCodeClickListener(int position, String candidateText);
         void onMitecBarCodeClickListener(int position, String candidateText);
-        void onScentAirBarCodeFocusChangeListener(int position, boolean touchFocusSelect);
-        void onMitecBarCodeFocusChangeListener(int position, boolean touchFocusSelect);
     }
     public void setCustomButtonListener(customButtonListener listener) {
         this.customListener = listener;
@@ -215,25 +213,6 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
                 }
             }
         });
-        holder.scentairBarcodeField.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View v, boolean hasFocus) {
-                final EditText editText = (EditText) v;
-                boolean touchFocusSelect = editText.didTouchFocusSelect();
-                if (!hasFocus) {
-                    editText.setBackgroundColor(Color.WHITE);
-                } else {
-                    // Does have focus, lets highlight the field by changing background color
-                    editText.setBackgroundColor(Color.LTGRAY);
-                    editText.setCursorVisible(true);
-                    // Clear the text stored in the edit field
-                    editText.setText("");
-                    if (customListener != null) {
-                        customListener.onScentAirBarCodeFocusChangeListener(position, touchFocusSelect);
-                    }
-                }
-            }
-        });
         holder.scentairBarcodeField.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -247,23 +226,6 @@ public class BayItemArrayAdapter extends ArrayAdapter<BayItem> {
                         customListener.onScentAirBarCodeClickListener(position,candidateText);
                     }
                 }
-        });
-        holder.mitecBarcodeField.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View v, boolean hasFocus) {
-                final EditText editText = (EditText) v;
-                Boolean touchFocusSelect = editText.didTouchFocusSelect();
-                if (!hasFocus) {
-                    editText.setBackgroundColor(Color.WHITE);
-                } else {
-                    v.setBackgroundColor(Color.LTGRAY);
-                    editText.setCursorVisible(true);
-                    editText.setText("");
-                    if (customListener != null) {
-                        customListener.onMitecBarCodeFocusChangeListener(position, touchFocusSelect);
-                    }
-                }
-            }
         });
         holder.mitecBarcodeField.setOnClickListener(new View.OnClickListener() {
             @Override

@@ -3,6 +3,8 @@ package com.scentair.scentwave;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import android.content.Context;
+import android.widget.Toast;
 
 public class BayItem{
     static final long ONE_MINUTE_IN_MILLIS=60000;
@@ -75,7 +77,7 @@ public class BayItem{
                         returnValue = "Passed";
                         this.stepStatus = "Passed";
                     } else {
-                        returnValue = "<font color=#2F4F4F>Barcodes not entered</font>";
+                        returnValue = "<font color=#2F4F4F>Barcodes not entered<br>Tap to clear last bay barcodes</br></font>";
                     }
                     break;
                 case 2:
@@ -130,18 +132,17 @@ public class BayItem{
         return returnValue;
     }
 
-    public Boolean updateValue(Integer newValue, Integer testStepNumber) {
+    public Boolean updateValue(Integer newValue, Integer testStepNumber, Context context) {
         oldCurrentValue = currentValue;
         currentValue = newValue;
         oldUnitState = unitState;
         Boolean refreshScreen = false;
-        Date newValueUpdateTime = new Date();
         if (isActive && !isFailed) {
             // Only process this if the bay is active in calibration and have not already failed
             // Check to see if our new value has triggered a state change.
             unitState = TestRunActivity.machineStates.getState(newValue);
             // If we are in test step number 3, then start looking for the proper fan values
-            if (testStepNumber.equals(3)) {
+            if (testStepNumber.equals(3) && fanMedDisplayValue.equals("")) {
                 if (!oldUnitState.equals(unitState)) {
                     // We have made a large shift.  Reset all timers so we wash out any old pass thru values
                     lowValueTimestamp=null;
@@ -157,8 +158,6 @@ public class BayItem{
                             // Get the first timestamp for Low
                             lowValueTimestamp = new Date();
                         } else {
-                            // If it isn't the first time through, check the time we have been on this value
-                            Long difference = newValueUpdateTime.getTime() - lowValueTimestamp.getTime();
                             if (oldCurrentValue.equals(newValue)) {
                                 // If this low value has been active for 1 second
                                 // save the last value stored
@@ -173,11 +172,9 @@ public class BayItem{
                         break;
                     case "Medium":
                         if (medValueTimestamp==null) {
-                            // Get the first timestamp for Low
+                            // Get the first timestamp for Medium
                             medValueTimestamp = new Date();
                         } else {
-                            // If it isn't the first time through, check the time we have been on this value
-                            Long difference = newValueUpdateTime.getTime() - medValueTimestamp.getTime();
                             if (oldCurrentValue.equals(newValue)) {
                                 // If this low value has been active for 1 second or more
                                 // save the last value stored
@@ -192,11 +189,9 @@ public class BayItem{
                         break;
                     case "High":
                         if (highValueTimestamp==null) {
-                            // Get the first timestamp for Low
+                            // Get the first timestamp for High
                             highValueTimestamp = new Date();
                         } else {
-                            // If it isn't the first time through, check the time we have been on this value
-                            Long difference = newValueUpdateTime.getTime() - highValueTimestamp.getTime();
                             if (oldCurrentValue.equals(newValue)) {
                                 // If this low value has been active for 1 second
                                 // save the last value stored
@@ -209,29 +204,31 @@ public class BayItem{
                             }
                         }
                         break;
+                    default:
+                        break;
                 }
             }
-
-
             // We only want the cycle timer to engage if we have already passed step 3
-            // Step 3 can be passed if we have values for all three fan speeds and the display fan speed
-            if (!highValue.equals(0) && !lowValue.equals(0) && !medValue.equals(0) && !fanMedDisplayValue.equals("")) {
+            // Step 3 can be passed if we have values for high and low fan speeds and the display fan speed
+            if (!highValue.equals(0) && !lowValue.equals(0) && !fanMedDisplayValue.equals("")) {
                 // Check to see if the cycle timer has already passed
                 // If so, ignore this
                 if (!cycleTestComplete) {
-                    if ((oldUnitState.equals("Low") ||
-                            (oldUnitState.equals("Medium") ||
-                                    (oldUnitState.equals("High") ||
-                                            (oldUnitState.equals("Medium to High") ||
-                                                    (oldUnitState.equals("Low to Medium"))))
-                    ) && (
-                            unitState.equals("BackLight Off") ||
+                    if  ((oldUnitState.equals("Low") ||
+                                    oldUnitState.equals("Medium") ||
+                                    oldUnitState.equals("High") ||
+                                    oldUnitState.equals("Medium to High") ||
+                                    oldUnitState.equals("Low to Medium") ||
+                                    oldUnitState.equals("Fan OverLoad"))
+                         && (unitState.equals("BackLight Off") ||
                                     unitState.equals("BackLight On") ||
                                     unitState.equals("Off") ||
-                                    unitState.equals("FanTurnOn")))) {
+                                    unitState.equals("FanTurnOn") ||
+                                    unitState.equals("Recalibrate"))) {
                         // We have toggled from On to Off (in some form)
                         // Save the timestamp info for future reference
                         if (lastOffTime != null) {
+                            refreshScreen = true;
                             // Check the difference here
                             Date checkTime = new Date();
                             // Time difference in milliseconds
@@ -252,11 +249,16 @@ public class BayItem{
                                     if (testStepNumber.equals(5)) {
                                         stepStatus = "Passed";
                                         ledState = "OFF";
-                                        refreshScreen = true;
                                     }
                                     break;
                                 default:
                                     // No winner
+                                    // Display some on screen feedback with some details on what failed
+                                    CharSequence text = "Bay:" + this.bayNumber + " reports " + seconds.toString() + " seconds";
+                                    int duration = Toast.LENGTH_SHORT;
+
+                                    Toast toast = Toast.makeText(context, text, duration);
+                                    toast.show();
                                     cycleTestComplete = false;
                                     break;
                             }
