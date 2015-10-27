@@ -158,6 +158,12 @@ public class PostTestResultActivity extends Activity {
             } catch (PhidgetException pe) {
                 pe.printStackTrace();
             }
+            // Because this can take a while, add a toast to say 'Ready to Post'
+            CharSequence text = "Ready to Post Test Results";
+            int duration = Toast.LENGTH_SHORT;
+
+            Toast toast = Toast.makeText(context, text, duration);
+            toast.show();
         }
     }
     private class saveTestResults extends AsyncTask<String, Void, String> {
