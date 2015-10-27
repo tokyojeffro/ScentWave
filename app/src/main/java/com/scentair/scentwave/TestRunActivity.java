@@ -605,7 +605,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
             } else {
                 completeStepButton.setBackgroundColor(Color.GRAY);
                 completeStepButton.setTextColor(Color.BLACK);
-                Integer baysPending = testRun.numberOfActiveBays - testRun.currentStepUnitsTested - testRun.overallUnitsFailed;
+                Integer baysPending = testRun.numberOfActiveBays - testRun.currentStepUnitsTested;
                 String buttonText = "Bays Still Require Testing : " + baysPending;
                 completeStepButton.setText(buttonText);
             }

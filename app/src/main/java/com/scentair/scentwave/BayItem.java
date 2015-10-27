@@ -227,8 +227,9 @@ public class BayItem{
                                     unitState.equals("Recalibrate"))) {
                         // We have toggled from On to Off (in some form)
                         // Save the timestamp info for future reference
+                        refreshScreen = true;
+
                         if (lastOffTime != null) {
-                            refreshScreen = true;
                             // Check the difference here
                             Date checkTime = new Date();
                             // Time difference in milliseconds
