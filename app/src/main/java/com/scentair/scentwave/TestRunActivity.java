@@ -719,10 +719,12 @@ public class TestRunActivity extends Activity implements customButtonListener {
             if (rack.bays!=null) {
                 updatedValue = sensorVal + rack.bays[bayValue].calibrationOffset;
             }
-            Boolean refreshScreen = testRun.bayItems[bayValue].updateValue(updatedValue,testRun.currentTestStep,context);
-            aa.notifyDataSetChanged();
-            if (refreshScreen) {
-                updateCounts();
+            if (testRun!=null) {
+                Boolean refreshScreen = testRun.bayItems[bayValue].updateValue(updatedValue,testRun.currentTestStep,context);
+                aa.notifyDataSetChanged();
+                if (refreshScreen) {
+                    updateCounts();
+                }
             }
         }
     }
@@ -825,149 +827,160 @@ public class TestRunActivity extends Activity implements customButtonListener {
         protected void onPostExecute(String result) {
             // Continue setup after we have loaded the rack info from the DB.
             Boolean firstStart=true;
-            testRun = new TestRun();
-            if (resume) {
-                // Get the saved test run from prefs to start on from preferences
-                testRunSavedState = sharedPreferences.getString(TAG_SAVED_TEST_RUN, "");
-                testRun = gson.fromJson(testRunSavedState,TestRun.class);
+            if (rack!=null) {
+                // The rack null check is for when you try to start without being connected
+                testRun = new TestRun();
+                if (resume) {
+                    // Get the saved test run from prefs to start on from preferences
+                    testRunSavedState = sharedPreferences.getString(TAG_SAVED_TEST_RUN, "");
+                    testRun = gson.fromJson(testRunSavedState,TestRun.class);
 
-                // Need to check if past step 1.  If so, update the phidget settings.
-                if (testRun.currentTestStep>1) {
-                    firstStart=false;
-                }
+                    // Need to check if past step 1.  If so, update the phidget settings.
+                    if (testRun.currentTestStep>1) {
+                        firstStart=false;
+                    }
 
-                // If we are in step 5, need to clear out the target cycle times since they no longer apply on resume
-                if (testRun.currentTestStep.equals(5)) {
-                    for (int i = 0; i < rack.numberOfBays; i++) {
-                        if ((testRun.bayItems[i].isActive) &&
-                                (!testRun.bayItems[i].isFailed) &&
-                                (!testRun.bayItems[i].cycleTestComplete)) {
-                            // Bay is active, bay still has not passed or failed test yet.
-                            // Reset any timer targets
-                            testRun.bayItems[i].lastOffTime = new Date();
+                    // If we are in step 5, need to clear out the target cycle times since they no longer apply on resume
+                    if (testRun.currentTestStep.equals(5)) {
+                        for (int i = 0; i < rack.numberOfBays; i++) {
+                            if ((testRun.bayItems[i].isActive) &&
+                                    (!testRun.bayItems[i].isFailed) &&
+                                    (!testRun.bayItems[i].cycleTestComplete)) {
+                                // Bay is active, bay still has not passed or failed test yet.
+                                // Reset any timer targets
+                                testRun.bayItems[i].lastOffTime = new Date();
+                            }
                         }
                     }
+                    Toast.makeText(getApplicationContext(), "Test Run Resumed", Toast.LENGTH_LONG).show();
                 }
-                Toast.makeText(getApplicationContext(), "Test Run Resumed", Toast.LENGTH_LONG).show();
-            }
-            else {
-                //Initialize this test run
-                testRun = new TestRun(currentOperator, rack,testSteps.size());
-                // Make sure we read the test steps from the proper data structure
-                // Reset resume status and clear saved test run
-                editor.putBoolean(MainActivity.TAG_RESUME_AVAILABLE, false);
-                editor.putString(TAG_SAVED_TEST_RUN,"");
-                editor.commit();
-                // DEBUG - check if barcode debug is set.  If so, through some junk into the barcodes
-                // so we can move on to the rest of the tests
-                Boolean barcodeOverride = sharedPreferences.getBoolean(MainActivity.DEBUG_BARCODE_OVERRIDE, false);
-                if (barcodeOverride) {
-                    // Mitec barcodes are set to letters, scentair to numbers
-                    testRun.bayItems[0].mitecBarcode="AAA123";
-                    testRun.bayItems[0].scentairBarcode="123AAA";
-                    testRun.bayItems[1].mitecBarcode="AAA123333";
-                    testRun.bayItems[1].scentairBarcode="124AAA";
-                    testRun.bayItems[2].mitecBarcode="AAA128";
-                    testRun.bayItems[2].scentairBarcode="127AAA";
-                    testRun.bayItems[3].mitecBarcode="AAA123111";
-                    testRun.bayItems[3].scentairBarcode="122111AAA";
-                    testRun.bayItems[4].mitecBarcode="AAA124";
-                    testRun.bayItems[4].scentairBarcode="123AAA";
-                    testRun.bayItems[5].mitecBarcode="AAA122";
-                    testRun.bayItems[5].scentairBarcode="121AAA";
-                    testRun.bayItems[6].mitecBarcode="AAA121";
-                    testRun.bayItems[6].scentairBarcode="121AAA";
-                    testRun.bayItems[7].mitecBarcode="AAA128";
-                    testRun.bayItems[7].scentairBarcode="1212AAA";
-                    testRun.bayItems[8].mitecBarcode="AAA1123";
-                    testRun.bayItems[8].scentairBarcode="12352AAA";
-                    testRun.bayItems[9].mitecBarcode="AAA1252";
-                    testRun.bayItems[9].scentairBarcode="1231245AAA";
-                    testRun.bayItems[10].mitecBarcode="AAA1256123";
-                    testRun.bayItems[10].scentairBarcode="12312AAA";
-                    testRun.bayItems[11].mitecBarcode="AA12A123";
-                    testRun.bayItems[11].scentairBarcode="12351A2AA";
-                    testRun.bayItems[12].mitecBarcode="AA12A11223";
-                    testRun.bayItems[12].scentairBarcode="123A12A1A";
-                    testRun.bayItems[13].mitecBarcode="AA11A12123";
-                    testRun.bayItems[13].scentairBarcode="1213A1A23A";
-                    testRun.bayItems[14].mitecBarcode="AA215A1123";
-                    testRun.bayItems[14].scentairBarcode="123AA215A";
-                    testRun.bayItems[15].mitecBarcode="AAA122213";
-                    testRun.bayItems[15].scentairBarcode="1232A1A2A";
-                    testRun.bayItems[16].mitecBarcode="AA2A12253";
-                    testRun.bayItems[16].scentairBarcode="12232A1A1A";
-                    testRun.bayItems[17].mitecBarcode="A6AA123";
-                    testRun.bayItems[17].scentairBarcode="12993AAA";
-                    testRun.bayItems[18].mitecBarcode="A4AA123";
-                    testRun.bayItems[18].scentairBarcode="1263453A4AA";
-                    testRun.bayItems[19].mitecBarcode="A4AA41523";
-                    testRun.bayItems[19].scentairBarcode="123A7A43A";
-                    testRun.bayItems[20].mitecBarcode="A333AA123";
-                    testRun.bayItems[20].scentairBarcode="12333AA3A";
-                    testRun.bayItems[21].mitecBarcode="A888AA3123";
-                    testRun.bayItems[21].scentairBarcode="132436AA33A";
-                    testRun.bayItems[22].mitecBarcode="A2345AA123";
-                    testRun.bayItems[22].scentairBarcode="123AA2344A";
-                    testRun.bayItems[23].mitecBarcode="A3A33A2123";
-                    testRun.bayItems[23].scentairBarcode="1223453A5A5A";
+                else {
+                    //Initialize this test run
+                    testRun = new TestRun(currentOperator, rack,testSteps.size());
+                    // Make sure we read the test steps from the proper data structure
+                    // Reset resume status and clear saved test run
+                    editor.putBoolean(MainActivity.TAG_RESUME_AVAILABLE, false);
+                    editor.putString(TAG_SAVED_TEST_RUN,"");
+                    editor.commit();
+                    // DEBUG - check if barcode debug is set.  If so, through some junk into the barcodes
+                    // so we can move on to the rest of the tests
+                    Boolean barcodeOverride = sharedPreferences.getBoolean(MainActivity.DEBUG_BARCODE_OVERRIDE, false);
+                    if (barcodeOverride) {
+                        // Mitec barcodes are set to letters, scentair to numbers
+                        testRun.bayItems[0].mitecBarcode="AAA123";
+                        testRun.bayItems[0].scentairBarcode="123AAA";
+                        testRun.bayItems[1].mitecBarcode="AAA123333";
+                        testRun.bayItems[1].scentairBarcode="124AAA";
+                        testRun.bayItems[2].mitecBarcode="AAA128";
+                        testRun.bayItems[2].scentairBarcode="127AAA";
+                        testRun.bayItems[3].mitecBarcode="AAA123111";
+                        testRun.bayItems[3].scentairBarcode="122111AAA";
+                        testRun.bayItems[4].mitecBarcode="AAA124";
+                        testRun.bayItems[4].scentairBarcode="123AAA";
+                        testRun.bayItems[5].mitecBarcode="AAA122";
+                        testRun.bayItems[5].scentairBarcode="121AAA";
+                        testRun.bayItems[6].mitecBarcode="AAA121";
+                        testRun.bayItems[6].scentairBarcode="121AAA";
+                        testRun.bayItems[7].mitecBarcode="AAA128";
+                        testRun.bayItems[7].scentairBarcode="1212AAA";
+                        testRun.bayItems[8].mitecBarcode="AAA1123";
+                        testRun.bayItems[8].scentairBarcode="12352AAA";
+                        testRun.bayItems[9].mitecBarcode="AAA1252";
+                        testRun.bayItems[9].scentairBarcode="1231245AAA";
+                        testRun.bayItems[10].mitecBarcode="AAA1256123";
+                        testRun.bayItems[10].scentairBarcode="12312AAA";
+                        testRun.bayItems[11].mitecBarcode="AA12A123";
+                        testRun.bayItems[11].scentairBarcode="12351A2AA";
+                        testRun.bayItems[12].mitecBarcode="AA12A11223";
+                        testRun.bayItems[12].scentairBarcode="123A12A1A";
+                        testRun.bayItems[13].mitecBarcode="AA11A12123";
+                        testRun.bayItems[13].scentairBarcode="1213A1A23A";
+                        testRun.bayItems[14].mitecBarcode="AA215A1123";
+                        testRun.bayItems[14].scentairBarcode="123AA215A";
+                        testRun.bayItems[15].mitecBarcode="AAA122213";
+                        testRun.bayItems[15].scentairBarcode="1232A1A2A";
+                        testRun.bayItems[16].mitecBarcode="AA2A12253";
+                        testRun.bayItems[16].scentairBarcode="12232A1A1A";
+                        testRun.bayItems[17].mitecBarcode="A6AA123";
+                        testRun.bayItems[17].scentairBarcode="12993AAA";
+                        testRun.bayItems[18].mitecBarcode="A4AA123";
+                        testRun.bayItems[18].scentairBarcode="1263453A4AA";
+                        testRun.bayItems[19].mitecBarcode="A4AA41523";
+                        testRun.bayItems[19].scentairBarcode="123A7A43A";
+                        testRun.bayItems[20].mitecBarcode="A333AA123";
+                        testRun.bayItems[20].scentairBarcode="12333AA3A";
+                        testRun.bayItems[21].mitecBarcode="A888AA3123";
+                        testRun.bayItems[21].scentairBarcode="132436AA33A";
+                        testRun.bayItems[22].mitecBarcode="A2345AA123";
+                        testRun.bayItems[22].scentairBarcode="123AA2344A";
+                        testRun.bayItems[23].mitecBarcode="A3A33A2123";
+                        testRun.bayItems[23].scentairBarcode="1223453A5A5A";
+                    }
                 }
-            }
-            aa= new BayItemArrayAdapter(context, testRun);
-            aa.setCustomButtonListener(TestRunActivity.this);
+                aa= new BayItemArrayAdapter(context, testRun);
+                aa.setCustomButtonListener(TestRunActivity.this);
 
-            // need to initialize the phidgets to control the LED lights
-            try {
-                final Boolean startUp = firstStart;
-                for (int i=0;i<rack.numberOfPhidgetsPerRack;i++) {
-                    rack.phidgets[i].phidget.addAttachListener(new AttachListener() {
-                        public void attached(final AttachEvent ae) {
-                            AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), true, startUp);
-                            synchronized (handler) {
-                                runOnUiThread(handler);
-                                try {
-                                    handler.wait();
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
+                // need to initialize the phidgets to control the LED lights
+                try {
+                    final Boolean startUp = firstStart;
+                    for (int i=0;i<rack.numberOfPhidgetsPerRack;i++) {
+                        rack.phidgets[i].phidget.addAttachListener(new AttachListener() {
+                            public void attached(final AttachEvent ae) {
+                                AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), true, startUp);
+                                synchronized (handler) {
+                                    runOnUiThread(handler);
+                                    try {
+                                        handler.wait();
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
                                 }
                             }
-                        }
-                    });
-                    rack.phidgets[i].phidget.addDetachListener(new DetachListener() {
-                        public void detached(final DetachEvent ae) {
-                            AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), false, startUp);
-                            synchronized (handler) {
-                                runOnUiThread(handler);
-                                try {
-                                    handler.wait();
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
+                        });
+                        rack.phidgets[i].phidget.addDetachListener(new DetachListener() {
+                            public void detached(final DetachEvent ae) {
+                                AttachDetachRunnable handler = new AttachDetachRunnable(ae.getSource(), false, startUp);
+                                synchronized (handler) {
+                                    runOnUiThread(handler);
+                                    try {
+                                        handler.wait();
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
                                 }
                             }
-                        }
-                    });
-                    final int finalI = i;
-                    rack.phidgets[i].phidget.addSensorChangeListener(new SensorChangeListener() {
-                        public void sensorChanged(SensorChangeEvent se) {
-                            runOnUiThread(new SensorChangeRunnable(finalI, se.getIndex(), se.getValue()));
-                        }
-                    });
-                    rack.phidgets[i].phidget.open(rack.phidgets[i].phidgetSerialNumber, phidgetServerAddress, 5001);
+                        });
+                        final int finalI = i;
+                        rack.phidgets[i].phidget.addSensorChangeListener(new SensorChangeListener() {
+                            public void sensorChanged(SensorChangeEvent se) {
+                                runOnUiThread(new SensorChangeRunnable(finalI, se.getIndex(), se.getValue()));
+                            }
+                        });
+                        rack.phidgets[i].phidget.open(rack.phidgets[i].phidgetSerialNumber, phidgetServerAddress, 5001);
+                    }
+                } catch (PhidgetException pe) {
+                    pe.printStackTrace();
                 }
-            } catch (PhidgetException pe) {
-                pe.printStackTrace();
-            }
 
-            listView.setAdapter(aa);
-            if (resume) listView.smoothScrollToPosition(testRun.currentBay);
-            if (testRun.currentTestStep.equals(1)) {
-                // Make sure to put the cursor on the correct field
-                // Check the first bay
-                Integer targetBay = testRun.setNextBarcodeEditField();
-                listView.setSelection(targetBay);
+                listView.setAdapter(aa);
+                if (resume) listView.smoothScrollToPosition(testRun.currentBay);
+                if (testRun.currentTestStep.equals(1)) {
+                    // Make sure to put the cursor on the correct field
+                    // Check the first bay
+                    Integer targetBay = testRun.setNextBarcodeEditField();
+                    listView.setSelection(targetBay);
+                }
+                updateCounts();
+                updateView();
+            } else {
+                // Rack is not initialized, everything will fail
+                // Probably not connected to the database on the network
+                // Show a toast saying network problems
+                CharSequence text = "Cannot start, database not found.";
+                int duration = Toast.LENGTH_SHORT;
+                Toast toast = Toast.makeText(context, text, duration);
+                toast.show();
             }
-            updateCounts();
-            updateView();
         }
     }
 
