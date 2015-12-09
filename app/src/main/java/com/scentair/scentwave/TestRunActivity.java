@@ -455,11 +455,11 @@ public class TestRunActivity extends Activity implements customButtonListener {
                         if (!testRun.bayItems[i].cycleTestComplete) {
                             testRun.bayItems[i].ledState="ON";
                             updateLED(i, true);
-                            testRun.currentStepUnitsPassed++;
                         } else {
                             // The cycle test has already passed, so mark this bay passed
                             testRun.bayItems[i].stepStatus="Passed";
                             // Turn off readings from that bay
+                            testRun.currentStepUnitsPassed++;
                         }
                     } else {
                         testRun.bayItems[i].ledState = "ON";
@@ -670,7 +670,7 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 dataRate = resources.getInteger(R.integer.PHIDGET_DATA_RATE);
                 ratioMetric = resources.getBoolean(R.bool.PHIDGET_RATIO_METRIC);
             }
-            
+
             if (!attach) {
                 // Build a toast here that says there are network issues and the phidget is not attached
                 Toast.makeText(getApplicationContext(), "Phidget Detached. Please check network.", Toast.LENGTH_LONG).show();

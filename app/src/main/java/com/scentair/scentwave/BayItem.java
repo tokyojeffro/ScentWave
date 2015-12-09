@@ -142,7 +142,7 @@ public class BayItem{
             // Check to see if our new value has triggered a state change.
             unitState = TestRunActivity.machineStates.getState(newValue);
             // If we are in test step number 3, then start looking for the proper fan values
-            if (testStepNumber.equals(3) && fanMedDisplayValue.equals("")) {
+            if (testStepNumber.equals(3) && lowValue!=0 && highValue!=0) {
                 if (!oldUnitState.equals(unitState)) {
                     // We have made a large shift.  Reset all timers so we wash out any old pass thru values
                     lowValueTimestamp=null;
@@ -268,6 +268,11 @@ public class BayItem{
                             lastOffTime = new Date();
                         }
                     }
+                    CharSequence text = "Bay:" + this.bayNumber + " cycle timeout event.";
+                    int duration = Toast.LENGTH_SHORT;
+
+                    Toast toast = Toast.makeText(context, text, duration);
+                    toast.show();
                 }
             }
         }
