@@ -671,11 +671,6 @@ public class TestRunActivity extends Activity implements customButtonListener {
                 ratioMetric = resources.getBoolean(R.bool.PHIDGET_RATIO_METRIC);
             }
 
-            if (!attach) {
-                // Build a toast here that says there are network issues and the phidget is not attached
-                Toast.makeText(getApplicationContext(), "Phidget Detached. Please check network.", Toast.LENGTH_LONG).show();
-            }
-
             try {
                 if (phidget.isAttached()) {
                     if (phidget==rack.phidgets[0].phidget) {
