@@ -142,7 +142,12 @@ public class BayItem{
             // Check to see if our new value has triggered a state change.
             unitState = TestRunActivity.machineStates.getState(newValue);
             // If we are in test step number 3, then start looking for the proper fan values
-            if (testStepNumber.equals(3) && lowValue!=0 && highValue!=0) {
+            // We only execute the logic to trap values if any of the necessary values are empty
+            if (testStepNumber.equals(3) && (
+                    fanMedDisplayValue.equals("") ||
+                    lowValue.equals(0) ||
+                            highValue.equals(0) ) )
+            {
                 if (!oldUnitState.equals(unitState)) {
                     // We have made a large shift.  Reset all timers so we wash out any old pass thru values
                     lowValueTimestamp=null;
@@ -154,53 +159,59 @@ public class BayItem{
                     case "Unplugged":
                         break;
                     case "Low":
-                        if (lowValueTimestamp==null) {
-                            // Get the first timestamp for Low
-                            lowValueTimestamp = new Date();
-                        } else {
-                            if (oldCurrentValue.equals(newValue)) {
-                                // If this low value has been active for 1 second
-                                // save the last value stored
-                                lowValue = oldCurrentValue;
-                                lowValueTimestamp=null;
-                                refreshScreen=true;
-                            } else {
-                                // Reset the timestamp
+                        if (lowValue.equals(0)) {
+                            if (lowValueTimestamp == null) {
+                                // Get the first timestamp for Low
                                 lowValueTimestamp = new Date();
+                            } else {
+                                if (oldCurrentValue.equals(newValue)) {
+                                    // If this low value has been active for 1 second
+                                    // save the last value stored
+                                    lowValue = oldCurrentValue;
+                                    lowValueTimestamp = null;
+                                    refreshScreen = true;
+                                } else {
+                                    // Reset the timestamp
+                                    lowValueTimestamp = new Date();
+                                }
                             }
                         }
                         break;
                     case "Medium":
-                        if (medValueTimestamp==null) {
-                            // Get the first timestamp for Medium
-                            medValueTimestamp = new Date();
-                        } else {
-                            if (oldCurrentValue.equals(newValue)) {
-                                // If this low value has been active for 1 second or more
-                                // save the last value stored
-                                medValue = oldCurrentValue;
-                                medValueTimestamp=null;
-                                refreshScreen=true;
-                            } else {
-                                // Reset the timestamp
+                        if ((medValue.equals(0))) {
+                            if (medValueTimestamp == null) {
+                                // Get the first timestamp for Medium
                                 medValueTimestamp = new Date();
+                            } else {
+                                if (oldCurrentValue.equals(newValue)) {
+                                    // If this low value has been active for 1 second or more
+                                    // save the last value stored
+                                    medValue = oldCurrentValue;
+                                    medValueTimestamp = null;
+                                    refreshScreen = true;
+                                } else {
+                                    // Reset the timestamp
+                                    medValueTimestamp = new Date();
+                                }
                             }
                         }
                         break;
                     case "High":
-                        if (highValueTimestamp==null) {
-                            // Get the first timestamp for High
-                            highValueTimestamp = new Date();
-                        } else {
-                            if (oldCurrentValue.equals(newValue)) {
-                                // If this low value has been active for 1 second
-                                // save the last value stored
-                                highValue = oldCurrentValue;
-                                highValueTimestamp=null;
-                                refreshScreen=true;
-                            } else {
-                                // Reset the timestamp
+                        if (highValue.equals(0)) {
+                            if (highValueTimestamp == null) {
+                                // Get the first timestamp for High
                                 highValueTimestamp = new Date();
+                            } else {
+                                if (oldCurrentValue.equals(newValue)) {
+                                    // If this low value has been active for 1 second
+                                    // save the last value stored
+                                    highValue = oldCurrentValue;
+                                    highValueTimestamp = null;
+                                    refreshScreen = true;
+                                } else {
+                                    // Reset the timestamp
+                                    highValueTimestamp = new Date();
+                                }
                             }
                         }
                         break;
